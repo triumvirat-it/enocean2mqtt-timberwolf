@@ -1,0 +1,67 @@
+# Beispielkonfiguration — der Entrypoint legt diese Datei beim ersten Container-Start
+# automatisch als gateways.yaml an. Editiere sie via Portainer-Console:
+#   Portainer → Containers → enocean2mqtt → Quick action ">_" → nano /data/gateways.yaml
+
+gateways:
+  # Dev-Gateway (dediziert für Entwicklung/Tests — keine Konflikte mit anderen Anwendungen)
+  - name: "Dev Gateway"
+    type: TCM310-LAN
+    host: "192.168.1.217"
+    port: 5000
+    enabled: true
+    rssi_filter: null         # z.B. -85, oder null für aus
+    repeater_level: 0         # 0=aus, 1=Level1, 2=Level2
+    floor_assignments:
+      - "Test"
+
+  # Produktive Gateways — erst aktivieren wenn andere Gateway-Anwendungen abgeschaltet sind!
+  - name: "LAN Gateway1"
+    type: TCM310-LAN
+    host: "192.168.1.219"
+    port: 5000
+    enabled: false            # WICHTIG: andere Gateway-Anwendung kann sonst blockieren
+    base_id: "FF810000"
+    floor_assignments:
+      - "Alexa"
+      - "Aquarium"
+      - "Pool"
+      - "Temperaturcontrol"
+      - "Beispielwohnung"
+
+  - name: "LAN Gateway2"
+    type: TCM310-LAN
+    host: "192.168.1.220"    # IP anpassen falls vorhanden
+    port: 5000
+    enabled: false
+    floor_assignments:
+      - "Elektroschrank"
+      - "Triumvirat"
+
+cascade:
+  dedup_window_ms: 200
+  send_strategy: best_rssi    # best_rssi | all_gateways | floor_only
+  rssi_history_size: 20
+
+mqtt:
+  # Der eclipse-mosquitto Container läuft auf 172.17.0.2 im Docker-Default-Netz.
+  # Aus unserem Container heraus erreichbar entweder über:
+  #   - Die LAN-IP des Timberwolf: 192.168.1.59 (Port 1883 ist veröffentlicht)
+  #   - Die Container-IP direkt: 172.17.0.2
+  # Empfehlung: LAN-IP, dann ist es egal welche IPs Docker neu vergibt
+  host: "192.168.1.59"
+  port: 1883
+  username: null              # Anonymous — Mosquitto 1.6 erlaubt das per Default
+  password: null
+  client_id: "enocean2mqtt-timberwolf"
+  base_topic: "enocean"
+  qos: 1
+  retain_state: true
+
+webui:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  auth_user: null
+  auth_password: null
+
+log_level: INFO

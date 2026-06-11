@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1f2c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="enocean2mqtt">
+  <title>enocean2mqtt</title>
+  <link rel="icon" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/brand.css">
+  <style>
+    /* ===== Mobile-Schaltseite (M93/M96) — Triumvirat-Tokens aus brand.css ===== */
+    [v-cloak] { display: none; }
+    body { background: var(--background); -webkit-tap-highlight-color: transparent; }
+
+    .m-app { max-width: 640px; margin: 0 auto; min-height: 100vh;
+             display: flex; flex-direction: column; }
+
+    /* Kopf: enocean2mqtt-Logo + Version */
+    .m-head {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--ink); color: #fff;
+      display: flex; align-items: center; gap: 0.7rem;
+      padding: calc(env(safe-area-inset-top) + 0.8rem) 1rem 0.8rem 1rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .m-logo { flex-shrink: 0; }
+    .m-title { font-family: var(--font-headline); font-weight: 700; font-size: 1.12rem; letter-spacing: -0.01em; }
+    .m-sub { font-size: 0.7rem; color: rgba(255,255,255,0.55); letter-spacing: 0.04em; }
+    .m-refresh {
+      margin-left: auto; background: rgba(255,255,255,0.12); color: #fff;
+      border: none; width: 40px; height: 40px; border-radius: 50%;
+      font-size: 1.1rem; cursor: pointer;
+    }
+    .m-refresh:active { transform: scale(0.92); }
+    .m-refresh.spin { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .m-body { flex: 1; padding: 0 0.75rem; }
+
+    /* Ebene 1: Etage */
+    .floor { margin-top: 0.7rem; }
+    .floor-head {
+      display: flex; align-items: center; gap: 0.6rem;
+      background: var(--ink); color: #fff;
+      border-radius: var(--radius); padding: 0.85rem 1rem; cursor: pointer;
+      box-shadow: var(--shadow-sm); user-select: none;
+    }
+    .floor-head h2 { font-size: 1.0rem; margin: 0; color: #fff; }
+    .floor-head .count {
+      margin-left: auto; font-size: 0.74rem; color: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.12); padding: 0.1rem 0.55rem; border-radius: var(--radius-pill);
+    }
+    .chev { transition: transform var(--duration) var(--easing); opacity: 0.7; font-size: 0.8rem; }
+    .open > .chev, .floor-head.open .chev, .room-head.open .chev { transform: rotate(90deg); }
+
+    /* Ebene 2: Raum (eingerueckt, heller) */
+    .room { margin: 0.4rem 0 0 0.5rem; }
+    .room-head {
+      display: flex; align-items: center; gap: 0.55rem;
+      background: #fff; border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 0.7rem 0.9rem; cursor: pointer;
+      box-shadow: var(--shadow-sm); user-select: none;
+    }
+    .room-head h3 { font-size: 0.92rem; margin: 0; }
+    .room-head .count {
+      margin-left: auto; font-size: 0.72rem; color: var(--muted);
+      background: var(--tint); padding: 0.1rem 0.55rem; border-radius: var(--radius-pill);
+    }
+    .room-body { margin: 0.4rem 0 0.2rem 0.5rem; }
+
+    /* Geraete-Kachel */
+    .tile {
+      display: flex; align-items: center; gap: 0.8rem;
+      background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 0.65rem 0.85rem; margin-bottom: 0.45rem; box-shadow: var(--shadow-sm);
+    }
+    .tile-info { min-width: 0; flex: 1; }
+    .tile-name { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tile-meta { font-size: 0.72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tile-ctrl { flex-shrink: 0; display: flex; align-items: center; gap: 0.4rem; }
+
+    .toggle {
+      width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--line);
+      background: var(--tint); color: var(--muted); font-size: 1.45rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--duration) var(--easing-bounce);
+    }
+    .toggle:active { transform: scale(0.9); }
+    .toggle.on { background: var(--mint); border-color: var(--mint); color: var(--ink);
+                 box-shadow: 0 6px 18px rgba(45,212,191,0.45); }
+
+    .rbtn {
+      width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line);
+      background: #fff; color: var(--ink); font-size: 1.0rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .rbtn:active { transform: scale(0.9); background: var(--tint); }
+    .rbtn.stop { color: var(--coral); }
+
+    .dim-wrap { display: flex; flex-direction: column; gap: 0.35rem; width: 128px; }
+    .dim-row { display: flex; align-items: center; gap: 0.5rem; }
+    .slider { width: 100%; accent-color: var(--coral); height: 26px; }
+    .dim-pct { font-size: 0.72rem; color: var(--muted); min-width: 2.4rem; text-align: right; }
+    .pos-pill { font-size: 0.7rem; color: var(--muted); background: var(--tint);
+                padding: 0.1rem 0.5rem; border-radius: var(--radius-pill); }
+    /* Rollo: auf/stop/ab + Positions-Slider (M98) */
+    .shut-wrap { display: flex; flex-direction: column; gap: 0.35rem; width: 152px; }
+    .shut-row { display: flex; align-items: center; gap: 0.3rem; }
+    .rbtn.sm { width: 36px; height: 36px; font-size: 0.92rem; }
+
+    /* Farbleuchte: Helligkeit + Regenbogen-Hue (M103) */
+    .cl-wrap { display: flex; flex-direction: column; gap: 0.4rem; width: 152px; }
+    .slider.rainbow {
+      -webkit-appearance: none; appearance: none; height: 22px; border-radius: var(--radius-pill);
+      outline: none; padding: 0;
+      /* to left: Verlauf gespiegelt, damit die angezeigte Farbe der
+         tatsaechlichen Lampenfarbe entspricht (Geraet laeuft andersrum).
+         Slider-Wert bleibt = dim_percent, Feedback bleibt konsistent. */
+      background: linear-gradient(to left,
+        #ff0000, #ffea00, #00e000, #00e6e6, #0048ff, #c000ff, #ff0000);
+    }
+    .slider.rainbow::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 20px; height: 20px;
+      border-radius: 50%; background: #fff; border: 2px solid rgba(0,0,0,0.3);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35); cursor: pointer;
+    }
+    .slider.rainbow::-moz-range-thumb {
+      width: 20px; height: 20px; border-radius: 50%; background: #fff;
+      border: 2px solid rgba(0,0,0,0.3); cursor: pointer;
+    }
+
+    /* Sensor-Kachel (read-only, M107): Primaerwert gross + Rest klein */
+    .sensor-readout { text-align: right; min-width: 84px; flex-shrink: 0; }
+    .sensor-primary { font-family: var(--font-headline); font-weight: 700;
+                      font-size: 1.3rem; color: var(--ink); white-space: nowrap; line-height: 1.15; }
+    .sensor-primary.muted { color: var(--muted); font-weight: 400; }
+    .sensor-rest { font-size: 0.68rem; color: var(--muted); white-space: nowrap;
+                   overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+
+    /* Geraete-Karte mit Werte-Zeilen pro Kanal (Diagnose-Walkthrough) */
+    .tile.tile-col { flex-direction: column; align-items: stretch; }
+    .dev-rows { margin-top: 0.55rem; display: flex; flex-direction: column; gap: 0.3rem; }
+    .dev-row {
+      display: flex; align-items: flex-start; gap: 0.5rem;
+      padding: 0.4rem 0.55rem; background: var(--tint); border-radius: 9px;
+    }
+    .dev-row .dot {
+      width: 9px; height: 9px; border-radius: 50%; margin-top: 0.28rem;
+      flex-shrink: 0; background: var(--mint);
+    }
+    .dev-row.stale .dot { background: #e0b93a; }   /* gelb: aelter als 10 min */
+    .dev-row.never .dot { background: var(--line); } /* grau: nie empfangen */
+    .dev-row-main { flex: 1; min-width: 0; }
+    .dev-row-name { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+    .dev-row-val { font-size: 0.8rem; color: var(--muted); word-break: break-word; line-height: 1.35; }
+    .dev-row.never .dev-row-val { color: var(--coral); }
+    .dev-row-meta {
+      text-align: right; font-size: 0.66rem; color: var(--muted);
+      flex-shrink: 0; white-space: nowrap; line-height: 1.4;
+    }
+
+    .empty { text-align: center; color: var(--muted); padding: 3rem 1rem; }
+    .empty .icon { font-size: 2.5rem; opacity: 0.5; }
+
+    /* Fuss: Triumvirat-Logo */
+    .m-foot {
+      margin-top: auto; padding: 1.4rem 1rem calc(env(safe-area-inset-bottom) + 1.2rem) 1rem;
+      display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+    }
+    .tw-logo-img { height: 30px; width: auto; opacity: 0.92; }
+
+    .toastbar {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: calc(env(safe-area-inset-bottom) + 1rem);
+      background: var(--ink); color: #fff; padding: 0.7rem 1.2rem;
+      border-radius: var(--radius-pill); box-shadow: var(--shadow); font-size: 0.85rem; z-index: 50;
+    }
+    .toastbar.err { background: var(--coral); }
+  </style>
+</head>
+<body>
+  <div id="app" class="m-app" v-cloak>
+    <!-- Kopf: enocean2mqtt-Logo + Version -->
+    <div class="m-head">
+      <!-- Echte Triumvirat-Bildmarke (logo-mark.svg), invertiert fuer dunklen Header -->
+      <svg class="m-logo" width="34" height="34" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="14" ry="14" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.18"/>
+        <rect x="19" y="20" width="6" height="24" rx="3" fill="#ff6b6b"/>
+        <rect x="29" y="24" width="6" height="16" rx="3" fill="#fcd34d"/>
+        <rect x="39" y="17" width="6" height="30" rx="3" fill="#2dd4bf"/>
+      </svg>
+      <div>
+        <div class="m-title">enocean2mqtt</div>
+        <div class="m-sub">v{{ version }} · {{ actorCount }} Geräte</div>
+      </div>
+      <button class="m-refresh" :class="{spin: loading}" @click="load" aria-label="Aktualisieren">⟳</button>
+    </div>
+
+    <div class="m-body">
+      <div v-if="!groups.length && !loading" class="empty">
+        <div class="icon">💡</div>
+        <p>Keine Geräte gefunden.<br>Lege Aktoren/Sensoren in der Desktop-App an.</p>
+      </div>
+
+      <!-- Ebene 1: Etage -->
+      <div v-for="fl in groups" :key="fl.floor" class="floor">
+        <div class="floor-head" :class="{open: isFloorOpen(fl.floor)}" @click="toggleFloor(fl.floor)">
+          <span class="chev">▶</span>
+          <h2>{{ fl.floor }}</h2>
+          <span class="count">{{ fl.count }}</span>
+        </div>
+
+        <div v-show="isFloorOpen(fl.floor)">
+          <!-- Ebene 2: Raum -->
+          <div v-for="rm in fl.rooms" :key="rm.room" class="room">
+            <div class="room-head" :class="{open: isRoomOpen(fl.floor, rm.room)}" @click="toggleRoom(fl.floor, rm.room)">
+              <span class="chev">▶</span>
+              <h3>{{ rm.room }}</h3>
+              <span class="count">{{ rm.items.length }}</span>
+            </div>
+
+            <div v-show="isRoomOpen(fl.floor, rm.room)" class="room-body">
+              <div v-for="it in rm.items" :key="it.key" class="tile" :class="{ 'tile-col': it.kind === 'sensor' }">
+                <div class="tile-info">
+                  <div class="tile-name">{{ it.name }}</div>
+                  <div class="tile-meta">{{ it.sub }}</div>
+                </div>
+
+                <div v-if="it.kind === 'switch'" class="tile-ctrl">
+                  <button class="toggle" :class="{on: isOn(it.ch)}" @click="toggleSwitch(it)">⏻</button>
+                </div>
+
+                <div v-else-if="it.kind === 'dimmer'" class="tile-ctrl">
+                  <div class="dim-wrap">
+                    <div class="dim-row">
+                      <button class="toggle" style="width:42px;height:42px;font-size:1.1rem"
+                              :class="{on: isOn(it.ch)}" @click="toggleDimmer(it)">⏻</button>
+                      <span class="dim-pct">{{ dimVal(it.ch) }}%</span>
+                    </div>
+                    <input class="slider" type="range" min="0" max="100" step="5"
+                           :value="dimVal(it.ch)" @change="setDim(it, $event.target.value)">
+                  </div>
+                </div>
+
+                <div v-else-if="it.kind === 'shutter'" class="tile-ctrl">
+                  <div class="shut-wrap">
+                    <div class="shut-row">
+                      <button class="rbtn sm" @click="shutter(it,'up')" aria-label="Auf">▲</button>
+                      <button class="rbtn sm stop" @click="shutter(it,'stop')" aria-label="Stop">■</button>
+                      <button class="rbtn sm" @click="shutter(it,'down')" aria-label="Ab">▼</button>
+                      <span class="dim-pct" v-if="hasPos(it.ch)">{{ posVal(it.ch) }}%</span>
+                    </div>
+                    <input class="slider" type="range" min="0" max="100" step="5"
+                           :value="posVal(it.ch)" @change="setPosition(it, $event.target.value)">
+                  </div>
+                </div>
+
+                <!-- Farbleuchte: Helligkeit + Hue (M103) -->
+                <div v-else-if="it.kind === 'colorlight'" class="tile-ctrl">
+                  <div class="cl-wrap">
+                    <div class="dim-row">
+                      <button class="toggle" style="width:42px;height:42px;font-size:1.1rem"
+                              :class="{on: isOn(it.bright.ch)}" @click="toggleColorLight(it)">⏻</button>
+                      <span class="dim-pct">{{ dimVal(it.bright.ch) }}%</span>
+                    </div>
+                    <input class="slider" type="range" min="0" max="100" step="5"
+                           :value="dimVal(it.bright.ch)" @change="setColorBrightness(it, $event.target.value)">
+                    <input class="slider rainbow" type="range" min="0" max="100" step="1"
+                           :value="colorVal(it.color.ch)" @change="setColorHue(it, $event.target.value)">
+                  </div>
+                </div>
+
+                <!-- Sensor/RX-Geraet: ALLE Kanaele einzeln mit Werten +
+                     Frische + RSSI (Diagnose-Walkthrough durchs Haus) -->
+                <div v-else-if="it.kind === 'sensor'" class="dev-rows">
+                  <div v-for="row in it.rows" :key="row.chName" class="dev-row"
+                       :class="{ never: !row.seen, stale: row.seen && !row.fresh }">
+                    <span class="dot"></span>
+                    <div class="dev-row-main">
+                      <div class="dev-row-name">{{ row.chName }}</div>
+                      <div class="dev-row-val">{{ row.valueText || (row.seen ? 'empfangen, kein Wertfeld' : 'noch nie empfangen') }}</div>
+                    </div>
+                    <div class="dev-row-meta">
+                      <div>{{ row.seen ? row.ago : '—' }}</div>
+                      <div v-if="row.rssi">{{ row.rssi }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fuss: komplettes Triumvirat-Logo (echtes CI-Asset, hell) -->
+    <div class="m-foot">
+      <img src="/assets/logo-horizontal.svg" alt="triumvirat IT Solutions" class="tw-logo-img">
+    </div>
+
+    <div v-if="toast" class="toastbar" :class="{err: toastErr}">{{ toast }}</div>
+  </div>
+
+  <script src="/assets/vue.global.js"></script>
+  <script>
+    const { createApp, ref, reactive, computed, onMounted, onUnmounted } = Vue;
+
+    const ACTOR_KINDS = ["switch", "dimmer", "shutter", "blind"];
+
+    createApp({
+      setup() {
+        const devices = ref([]);
+        const version = ref("");
+        const loading = ref(false);
+        const openFloor = reactive({});   // floor -> bool
+        const openRoom = reactive({});    // "floor::room" -> bool
+        const toast = ref("");
+        const toastErr = ref(false);
+        let toastTimer = null;
+        let pollTimer = null;
+
+        function flash(msg, err) {
+          toast.value = msg; toastErr.value = !!err;
+          if (toastTimer) clearTimeout(toastTimer);
+          toastTimer = setTimeout(() => { toast.value = ""; }, 1800);
+        }
+
+        function kindOf(ch) {
+          const k = (ch.profile && ch.profile.ui_kind) || "rx";
+          return k === "blind" ? "shutter" : k;
+        }
+
+        // ===== Sensoren (read-only, M107) =====
+        // Ein Kanal ist ein Sensor, wenn er reiner rx ist UND formatierbare
+        // Profil-Felder hat — aber KEIN Taster/PTM (F6-RPS, bundled PTM,
+        // Name enthaelt Taster/PTM/Wandsender). "Alle Sensoren" laut User-Wahl.
+        function isSensorChannel(ch) {
+          // ALLE angelernten RX-Kanaele zeigen (User-Wunsch) — inkl. Rauchmelder
+          // (F6-05-02), Fensterkontakte, Bewegungsmelder usw. PLUS valve-Kanaele
+          // (TX-only Heizregler wie STC-DO8: kein Status, aber wir zeigen den
+          // zuletzt gesendeten Sollwert). Ausgenommen sind die bedienbaren
+          // Aktoren (switch/dimmer/shutter — eigene Kacheln) und gebuendelte
+          // PTM-Sub-Inputs (kein eigenes Geraet, Teil eines Aktors).
+          const k = kindOf(ch);
+          if (k !== "rx" && k !== "valve") return false;
+          if ((ch.meta || {}).is_bundled_ptm) return false;
+          return true;
+        }
+        // Ein einzelnes Feld formatieren (analog Desktop formatFieldValue).
+        function fmtField(f, value) {
+          if (value === null || value === undefined) return null;
+          if (f.kind === "bool" || f.kind === "enum") {
+            const lbl = (f.enum_labels || {})[String(value)];
+            return lbl !== undefined ? lbl : String(value);
+          }
+          if (typeof value === "number") {
+            let s = (f.decimals != null) ? value.toFixed(f.decimals) : String(value);
+            if (f.unit) s += " " + f.unit;
+            return s;
+          }
+          return String(value);
+        }
+        // Aggregiert ALLE RX-Kanaele eines Geraets zu EINER Kachel.
+        // Primaer = erstes Feld mit Einheit (z.B. Temperatur) gross, Rest klein.
+        // So wird ein Rauchmelder (alarm + battery_low) ein Eintrag statt zwei.
+        // Liefert {primaryText, restText} oder null (noch kein Messwert).
+        function deviceSensorReadout(d) {
+          const vals = [];
+          for (const ch of (d.channels || []).filter(isSensorChannel)) {
+            const ls = ch.last_state;
+            const decoded = ls && ((ls.device && ls.device.decoded) || ls.decoded);
+            if (!decoded) continue;
+            const p = ch.profile || {};
+            const defs = (p.fields && p.fields.length) ? p.fields : (p.field ? [p.field] : []);
+            for (const f of defs) {
+              let v = decoded[f.name];
+              // Legacy-Fallback (alte Decoder ohne Feld-Split): value+kind.
+              if (v === undefined && decoded.kind === f.name && decoded.value !== undefined) v = decoded.value;
+              if (v === undefined) continue;
+              const s = fmtField(f, v);
+              if (s === null) continue;
+              vals.push({ label: f.label || f.name, text: s, hasUnit: !!f.unit, icon: f.icon || "" });
+            }
+          }
+          if (!vals.length) return null;
+          let pi = vals.findIndex(x => x.hasUnit);
+          if (pi < 0) pi = 0;
+          const primary = vals[pi];
+          const rest = vals.filter((_, i) => i !== pi);
+          return {
+            primaryText: (primary.icon ? primary.icon + " " : "") + primary.text,
+            restText: rest.map(r => r.label + ": " + r.text).join(" · "),
+          };
+        }
+
+        // "vor X" aus einem Unix-Timestamp (Sekunden).
+        function fmtAgo(ts) {
+          if (!ts) return "";
+          const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
+          if (s < 60) return "vor " + s + "s";
+          if (s < 3600) return "vor " + Math.floor(s / 60) + " min";
+          if (s < 86400) return "vor " + Math.floor(s / 3600) + " h";
+          return "vor " + Math.floor(s / 86400) + " d";
+        }
+
+        // Interne/rohe Felder, die NICHT als Wert angezeigt werden.
+        const NOISE_FIELDS = new Set([
+          "raw", "raw_hex", "status", "rorg", "_field_meta",
+          "serial_high", "serial_low",
+        ]);
+
+        // Eine Zeile pro RX-Kanal eines Geraets: alle Werte + Frische + RSSI.
+        // Damit sieht man beim Gang durchs Haus pro Schalter/Sensor sofort,
+        // ob/wann er zuletzt funkte und mit welchem Wert.
+        function channelRows(d) {
+          const rows = [];
+          for (const ch of (d.channels || []).filter(isSensorChannel)) {
+            const ls = ch.last_state;
+            // FIX: ls.decoded (autoritativer Telegramm-Decode) ZUERST — die
+            // frueher bevorzugte ls.device.decoded kann veraltet/falsch sein.
+            const decoded = ls && (ls.decoded || (ls.device && ls.device.decoded));
+            const p = ch.profile || {};
+            const defs = (p.fields && p.fields.length) ? p.fields : (p.field ? [p.field] : []);
+            const parts = [];
+            if (decoded) {
+              for (const f of defs) {
+                if (NOISE_FIELDS.has(f.name) || /_raw$/.test(f.name)) continue;
+                let v = decoded[f.name];
+                if (v === undefined && decoded.kind === f.name && decoded.value !== undefined) v = decoded.value;
+                if (v === undefined || v === null) continue;
+                const s = fmtField(f, v);
+                if (s === null) continue;
+                parts.push((f.label || f.name) + ": " + s);
+              }
+            }
+            let valueText = parts.join("  ·  ");
+            // Roh-Fallback: Telegramm kam an, aber (noch) ohne dekodierte
+            // Felder (z.B. Taster, der seit der ID-Zuordnung nicht mehr
+            // gedrueckt wurde — alter Roh-Decode im Cache). Beim naechsten
+            // Druck steht hier dann das echte F6-Event.
+            if (!valueText && decoded && decoded.raw_hex) {
+              valueText = "Funk empfangen (roh 0x" + decoded.raw_hex + ")";
+            }
+            let ts = ls ? ls.ts : null;
+            let seen = !!ls;
+            // TX-Heizregler (valve, z.B. STC-DO8): kein RX-Status — stattdessen
+            // den ZULETZT GESENDETEN Sollwert aus dem actor_state zeigen.
+            // Ein evtl. doch vorhandener RX-Wert hat Vorrang (valueText gesetzt).
+            if (kindOf(ch) === "valve" && !valueText) {
+              const as = ch.actor_state || {};
+              if (as.last_command) {
+                valueText = "→ gesendet: " + as.last_command;
+                if (as.last_command_at) ts = as.last_command_at;
+                seen = true;
+              } else {
+                valueText = "noch kein Sollwert gesendet";
+                seen = false;
+              }
+            }
+            const ago = ts ? (Date.now() / 1000 - ts) : null;
+            rows.push({
+              chName: ch.name || ch.channel_id,
+              valueText: valueText,
+              ago: fmtAgo(ts),
+              rssi: (ls && ls.rssi_dbm != null) ? (ls.rssi_dbm + " dBm") : "",
+              seen: seen,
+              fresh: ago != null && ago < 600,
+            });
+          }
+          return rows;
+        }
+
+        async function loadInfo() {
+          try {
+            const j = await fetch("/api/info").then(r => r.json());
+            version.value = j.version || "";
+          } catch (e) { /* egal */ }
+        }
+
+        async function load() {
+          loading.value = true;
+          try {
+            const r = await fetch("/api/devices");
+            if (!r.ok) throw new Error(r.status + "");
+            devices.value = await r.json();
+          } catch (e) {
+            flash("Laden fehlgeschlagen", true);
+          } finally {
+            loading.value = false;
+          }
+        }
+
+        // M95: effektive Etage/Raum (Channel-Override vor Device)
+        function effFloor(d, ch) { return ((ch.floor || "").trim() || (d.floor || "").trim()) || "Ohne Geschoss"; }
+        function effRoom(d, ch) { return ((ch.room || "").trim() || (d.room || "").trim()) || "Ohne Raum"; }
+
+        const items = computed(() => {
+          // 1. alle Aktor-Channels einsammeln
+          const raw = [];
+          for (const d of devices.value) {
+            for (const ch of (d.channels || [])) {
+              if (ACTOR_KINDS.includes(kindOf(ch))) raw.push({ d: d, ch: ch });
+            }
+          }
+          // 2. M103: Farbleuchten-Gruppen — nachsichtig: ein Kanal mit Rolle
+          //    "color" + IRGENDEIN weiterer Kanal derselben light_group = eine
+          //    Farbleuchte. Der andere Kanal ist die Helligkeit (egal ob explizit
+          //    "brightness" oder einfach "normaler Dimmer").
+          const groupMembers = {};
+          for (const e of raw) {
+            const g = (e.ch.light_group || "").trim();
+            if (g) (groupMembers[g] = groupMembers[g] || []).push(e);
+          }
+          const used = new Set();
+          const out = [];
+          for (const g of Object.keys(groupMembers)) {
+            const members = groupMembers[g];
+            const color = members.find(e => (e.ch.light_role || "").trim() === "color");
+            if (!color) continue;
+            const bright = members.find(e => (e.ch.light_role || "").trim() === "brightness")
+                        || members.find(e => e !== color);
+            if (!bright) continue;
+            const bd = bright.d, bch = bright.ch;
+            const cd = color.d, cch = color.ch;
+            used.add(bd.device_id + "::" + bch.channel_id);
+            used.add(cd.device_id + "::" + cch.channel_id);
+            out.push({
+              key: "cl::" + g, kind: "colorlight",
+              bright: { deviceId: bd.device_id, channelId: bch.channel_id, ch: bch },
+              color: { deviceId: cd.device_id, channelId: cch.channel_id, ch: cch },
+              floor: effFloor(bd, bch), room: effRoom(bd, bch),
+              name: g, sub: [bd.manufacturer, bd.model].filter(Boolean).join(" "),
+            });
+          }
+          // 4. restliche Aktor-Channels als normale Kacheln
+          for (const e of raw) {
+            const d = e.d, ch = e.ch;
+            const k = d.device_id + "::" + ch.channel_id;
+            if (used.has(k)) continue;
+            const actorChans = (d.channels || []).filter(c => ACTOR_KINDS.includes(kindOf(c)));
+            const multi = actorChans.length > 1;
+            out.push({
+              key: k, deviceId: d.device_id, channelId: ch.channel_id, ch: ch,
+              kind: kindOf(ch),
+              floor: effFloor(d, ch), room: effRoom(d, ch),
+              name: multi ? (d.name + " · " + ch.name) : (d.name || ch.name),
+              sub: [d.manufacturer, d.model].filter(Boolean).join(" "),
+            });
+          }
+          // 5. Sensoren (read-only) — ALLE RX-Geraete (User-Wunsch), EIN
+          //    Eintrag pro Geraet (alle RX-Kanaele aggregiert). Auch ohne
+          //    ersten Messwert sichtbar (zeigt dann "—").
+          for (const d of devices.value) {
+            const sensorChans = (d.channels || []).filter(isSensorChannel);
+            if (!sensorChans.length) continue;
+            const ch0 = sensorChans[0];
+            out.push({
+              key: "sns::" + d.device_id,
+              kind: "sensor",
+              floor: effFloor(d, ch0), room: effRoom(d, ch0),
+              name: d.name || ch0.name || d.device_id,
+              sub: [d.manufacturer, d.model].filter(Boolean).join(" "),
+              rows: channelRows(d),
+            });
+          }
+          return out;
+        });
+
+        function sortLabels(a, b) {
+          const oa = a.startsWith("Ohne "), ob = b.startsWith("Ohne ");
+          if (oa !== ob) return oa ? 1 : -1;
+          return a.localeCompare(b, "de", { numeric: true });
+        }
+
+        const groups = computed(() => {
+          const byFloor = {};
+          for (const it of items.value) {
+            (byFloor[it.floor] = byFloor[it.floor] || {})[it.room] =
+              byFloor[it.floor][it.room] || [];
+            byFloor[it.floor][it.room].push(it);
+          }
+          return Object.keys(byFloor).sort(sortLabels).map(floor => {
+            const rooms = Object.keys(byFloor[floor]).sort(sortLabels).map(room => ({
+              room,
+              items: byFloor[floor][room].sort((a, b) => a.name.localeCompare(b.name, "de")),
+            }));
+            const count = rooms.reduce((s, r) => s + r.items.length, 0);
+            return { floor, rooms, count };
+          });
+        });
+
+        const actorCount = computed(() => items.value.length);
+
+        function isFloorOpen(f) { return !!openFloor[f]; }
+        function toggleFloor(f) { openFloor[f] = !openFloor[f]; }
+        function roomKey(f, r) { return f + "::" + r; }
+        function isRoomOpen(f, r) { return !!openRoom[roomKey(f, r)]; }
+        function toggleRoom(f, r) { const k = roomKey(f, r); openRoom[k] = !openRoom[k]; }
+
+        function st(ch) { return ch.actor_state || null; }
+        function isOn(ch) { const s = st(ch); return s ? !!s.on : false; }
+        function dimVal(ch) {
+          // Angezeigter Dimmwert: bei AUS = 0 (konsistent mit Desktop "Ist").
+          // Der gemerkte Wert fuer "An" steckt weiter in actor_state.dim_percent.
+          const s = st(ch);
+          if (!s || !s.on) return 0;
+          return Math.round(s.dim_percent || 0);
+        }
+        function dimMemory(ch) {
+          // Letzter Dim-Wert, den sich der Aktor merkt (auch wenn gerade aus).
+          const s = st(ch);
+          return s ? Math.round(s.dim_percent || 0) : 0;
+        }
+        function posVal(ch) { const s = st(ch); return s ? Math.round(s.position_percent || 0) : 0; }
+        function hasPos(ch) { const s = st(ch); return s && s.position_percent != null; }
+
+        async function send(it, body, optimistic) {
+          if (optimistic) Object.assign(it.ch.actor_state = it.ch.actor_state || {}, optimistic);
+          try {
+            const r = await fetch(
+              "/api/devices/" + encodeURIComponent(it.deviceId)
+              + "/channels/" + encodeURIComponent(it.channelId) + "/test",
+              { method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body) });
+            if (!r.ok) throw new Error(r.status + "");
+            flash("Gesendet");
+            setTimeout(load, 900);
+          } catch (e) {
+            flash("Senden fehlgeschlagen", true);
+            load();
+          }
+        }
+
+        function toggleSwitch(it) {
+          const next = !isOn(it.ch);
+          send(it, { state: next }, { on: next });
+        }
+        function toggleDimmer(it) {
+          const next = !isOn(it.ch);
+          const ramp = parseInt((it.ch.meta || {}).dim_speed) || 0;
+          // An: gemerkten Dimmwert (actor_state.dim_percent) wiederherstellen.
+          // KEIN Schaltbefehl (A5-38-08 Command 1) — der FUD14/FLD61 IGNORIERT
+          // ihn (live gemessen 2026-06-06), nur Command 2 (Dimmen) wirkt. Der
+          // Memory-Wert wird im Backend persistiert (actor_state.yaml, Save bei
+          // Befehl + Shutdown), ueberlebt also den Neustart. 100% nur als
+          // Notnagel, wenn gar kein Wert bekannt ist. Aus: dim_percent NICHT
+          // anfassen (Memory bleibt erhalten).
+          let dim = dimMemory(it.ch);
+          if (next && dim <= 0) dim = 100;
+          const opt = next ? { on: true, dim_percent: dim } : { on: false };
+          send(it, { dim: next ? dim : 0, ramp: ramp, state: next }, opt);
+        }
+        function setDim(it, val) {
+          const pct = Math.max(0, Math.min(100, parseInt(val) || 0));
+          const ramp = parseInt((it.ch.meta || {}).dim_speed) || 0;
+          send(it, { dim: pct, ramp: ramp, state: pct > 0 }, { on: pct > 0, dim_percent: pct });
+        }
+        function shutter(it, dir) {
+          if (dir === "stop") return send(it, { command: "stop" });
+          send(it, { command: dir, duration_s: 60 });
+        }
+        function setPosition(it, val) {
+          // Rollo auf konkrete Position fahren (wie Desktop "Soll-Position").
+          const pct = Math.max(0, Math.min(100, parseInt(val) || 0));
+          send(it, { position: pct }, { position_percent: pct });
+        }
+
+        // M103: Farbleuchte (Helligkeit-Kanal + Farb-/Hue-Kanal)
+        function colorVal(ch) { const s = st(ch); return s ? Math.round(s.dim_percent || 0) : 0; }
+        function toggleColorLight(it) {
+          const next = !isOn(it.bright.ch);
+          const ramp = parseInt((it.bright.ch.meta || {}).dim_speed) || 0;
+          let dim = dimMemory(it.bright.ch);
+          if (next && dim <= 0) dim = 100;
+          send(it.bright, { dim: next ? dim : 0, ramp: ramp, state: next },
+               next ? { on: true, dim_percent: dim } : { on: false });
+        }
+        function setColorBrightness(it, val) {
+          const pct = Math.max(0, Math.min(100, parseInt(val) || 0));
+          const ramp = parseInt((it.bright.ch.meta || {}).dim_speed) || 0;
+          send(it.bright, { dim: pct, ramp: ramp, state: pct > 0 },
+               { on: pct > 0, dim_percent: pct });
+        }
+        function setColorHue(it, val) {
+          const pct = Math.max(0, Math.min(100, parseInt(val) || 0));
+          const ramp = parseInt((it.color.ch.meta || {}).dim_speed) || 0;
+          // Farbkanal: immer "an" (Hue ist ein Wert, kein Ein/Aus).
+          send(it.color, { dim: pct, ramp: ramp, state: true },
+               { on: true, dim_percent: pct });
+        }
+
+        onMounted(() => {
+          loadInfo();
+          load();
+          pollTimer = setInterval(load, 7000);
+        });
+        onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
+
+        return {
+          loading, version, groups, actorCount, toast, toastErr,
+          isFloorOpen, toggleFloor, isRoomOpen, toggleRoom, load,
+          isOn, dimVal, posVal, hasPos,
+          toggleSwitch, toggleDimmer, setDim, shutter, setPosition,
+          colorVal, toggleColorLight, setColorBrightness, setColorHue,
+        };
+      },
+    }).mount("#app");
+  </script>
+</body>
+</html>

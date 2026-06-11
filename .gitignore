@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Konfig mit echten Daten (nur Beispiele im Repo)
+data/gateways.yaml
+data/devices.yaml
+data/state.db
+data/*.log
+
+# Build-Artefakte
+build/
+dist/
+*.egg-info/
+# generierte Root-Kopie (Build); die Quelle liegt in docker/Dockerfile
+/Dockerfile
+enocean2mqtt-source.tar.gz
+*.tar
+
+# Lokale Daten-/Lizenz-Dumps und Backups
+deploy-backups/
+*.s3db
+*.lic

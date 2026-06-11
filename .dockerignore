@@ -1,0 +1,20 @@
+.git
+.gitignore
+*.pyc
+__pycache__
+.pytest_cache
+.venv
+venv
+tests/
+docs/
+data/devices.yaml
+data/gateways.yaml
+*.md
+!README.md
+.vscode
+.idea
+
+# Lokale Daten-Dumps
+*.s3db
+*.tar.gz
+*.tar

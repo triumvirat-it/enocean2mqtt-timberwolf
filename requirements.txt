@@ -1,0 +1,12 @@
+enocean==0.60.1
+asyncio-mqtt==0.16.2
+# paho-mqtt MUSS bei 1.x bleiben: asyncio-mqtt 0.16.2 ruft Client.message_retry_set()
+# auf, das in paho-mqtt 2.0 entfernt wurde. Ohne diesen Pin zieht pip paho 2.x und
+# die MQTT-Verbindung crasht beim Connect mit AttributeError (lautlos, kein Publish).
+paho-mqtt==1.6.1
+pydantic==2.9.2
+pydantic-settings==2.5.2
+PyYAML==6.0.2
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.12

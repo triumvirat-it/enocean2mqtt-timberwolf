@@ -1,0 +1,3787 @@
+meta:
+  description: 'EnOcean Geraete-Datenbank: Hersteller, Modell, EEP-Profil. Basiert auf Fakten-Wissen aus oeffentlichen Hersteller-Datenblaettern und Inspiration aus
+    etablierten Open-Source-Projekten (siehe CREDITS.md). Eigene Erweiterungen via /data/products_custom.yaml moeglich.'
+  count: 630
+products:
+- manufacturer: AFRISO
+  model: AHD10
+  com_profile: A5-30-03
+  device_type: SmokeAlarm
+  config: ReceiveEEP=EEP_A53003_FourInputTemperature;CommTimeout=50
+  description: Hitzemelder
+- manufacturer: AFRISO
+  model: AIS10
+  com_profile: F6-02-01
+  device_type: Siren
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none
+  description: Alarmsirene
+- manufacturer: AFRISO
+  model: ASD10
+  com_profile: A5-30-03
+  device_type: SmokeAlarm
+  config: ReceiveEEP=EEP_A53003_FourInputTemperature;CommTimeout=50
+  description: Rauchmelder
+- manufacturer: AFRISO
+  model: ASD20/1
+  com_profile: F6-05-02
+  device_type: SmokeAlarm
+  config: ReceiveEEP=EEP_F60502_SmokeDetector;CommTimeout=50
+  description: Rauchmelder
+- manufacturer: AFRISO
+  model: ASD20/2
+  com_profile: A5-30-03
+  device_type: SmokeAlarm
+  config: ReceiveEEP=EEP_A53003_FourInputTemperature;CommTimeout=50
+  description: Rauchmelder
+- manufacturer: AFRISO
+  model: CosiTherm F2A
+  com_profile: A5-10-03
+  device_type: Valve_2
+  config: SetpointOffsetMin=-11;SetpointOffsetMax=11;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=0;ProvidesEnergySaving=false;BaseTemp=19;
+  description: Stellventilaktor
+  order_nr: 13'995
+- manufacturer: AFRISO
+  model: CosiTherm F6A
+  com_profile: A5-10-03
+  device_type: Valve_6
+  config: SetpointOffsetMin=-11;SetpointOffsetMax=11;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=0;ProvidesEnergySaving=false;BaseTemp=19;
+  description: Stellventilaktor
+  order_nr: 13'995
+- manufacturer: AFRISO
+  model: FTM T
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: AFRISO
+  model: FTM TF
+  com_profile: A5-10-14
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity;SetpointMinTemp=15;SetpointMaxTemp=25
+  description: akt.Temp,Feuchte
+- manufacturer: AFRISO
+  model: Raumfühler FT
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=8;SetpointMaxTemp=30;
+  description: akt.Temp,Sollwert
+- manufacturer: AFRISO
+  model: Wassermelder eco
+  com_profile: F6-05-01
+  device_type: Leakage
+  config: ReceiveEEP=EEP_F60501;HasBattery=false;CommTimeout=0
+  description: Wassermelder
+- manufacturer: Bauer
+  model: BZ1D-80
+  device_type: EnergyMeter
+  config: NoTariff=false;Ch[Verbrauch T1]=HR,4119,float32,1.0,0.0;Ch[Verbrauch T2]=HR,4135,float32,1.0,0.0;Ch[Leistung]=HR,4151,float32,1.0,0.0;Ch[Tarif]=HR,4102,int16,1.0,0.0
+  description: Stromzähler
+  order_nr: 1'934
+- manufacturer: Bauer
+  model: BZ3D-80
+  device_type: EnergyMeter
+  config: NoTariff=false;Ch[Verbrauch T1]=HR,4131,float32,1.0,0.0;Ch[Verbrauch T2]=HR,4147,float32,1.0,0.0;Ch[Leistung]=HR,4157,float32,1.0,0.0;Ch[Tarif]=HR,4102,int16,1.0,0.0
+  description: Stromzähler
+  order_nr: 1'934
+- manufacturer: Echoflex
+  model: ER1C-B
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;NrOfLRNTels=3
+  description: Schaltaktor
+- manufacturer: Echoflex
+  model: ERDRC-EC
+  com_profile: A5-11-01
+  device_type: Dimmer_1
+  config: CommandEEP=OmnioUPD;ReceiveEEP=EEP_A51101;NrOfLRNTels=3;ConsiderLRNBit=false;OnRampTime_Secs=3;OffRampTime_Secs=3;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=300;DimUpAtOffCmd=true
+  description: Schaltaktor
+- manufacturer: Echoflex
+  model: ERDRC-FC
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;ReceiveEEP=EEP_A51101;ConsiderLRNBit=false;OnRampTime_Secs=3;OffRampTime_Secs=3;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=300;DimUpAtOffCmd=true
+  description: Schaltaktor
+- manufacturer: Echoflex
+  model: ERM-DL
+  com_profile: F6-02-01, A5-11-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=EEP_A51101;NrOfLRNTels=3;ConsiderLRNBit=false
+  description: Schaltaktor
+- manufacturer: Echoflex
+  model: MC17
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: Echoflex
+  model: MOS-17C
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy
+  description: Präsenz
+- manufacturer: Echoflex
+  model: PTM265
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+  description: Wandsender 2 Kanal
+- manufacturer: Echoflex
+  model: PTM265D
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Wandsender 4 Kanal
+- manufacturer: Eltako
+  model: CRC-2-6-xx
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_8
+  config: NrOfButtons=1;RecoverButtonState=true;AutoAssignIds=true;
+  description: Tasterschnittstelle 8
+- manufacturer: Eltako
+  model: DSZ14DRS-3x65A
+  com_profile: A5-12-01
+  device_type: EnergyMeter_Bi
+  fam14_bus: true
+  fam14_addressing: hex
+  description: |
+    Funk-Stromzaehler, Doppeltarif (HT/NT) — 1 Sender-ID.
+
+    Sender-ID = FAM14-Base-ID | (PCT14-Adresse als Hex)
+    Beispiel: Base FF800080, Adresse 26 -> 0x1A -> FF80009A
+
+    Tag/Nacht-Tarif wird im selben Channel publiziert,
+    unterschieden ueber DB0-Bit4 im Telegramm.
+  multi_channel_kind: tariff_byte   # 1 Sender-ID, Tarif via DB0-Bit4
+- manufacturer: Eltako
+  model: DSZ14WDRS-3x5A
+  com_profile: A5-12-01
+  device_type: EnergyMeter_Bi
+  fam14_bus: true
+  fam14_addressing: hex
+  description: |
+    Funk-Stromzaehler mit Wandler, Doppeltarif (HT/NT) — 1 Sender-ID.
+
+    Sender-ID = FAM14-Base-ID | (PCT14-Adresse als Hex)
+    Beispiel: Base FF800080, Adresse 5 -> FF800085
+  multi_channel_kind: tariff_byte
+- manufacturer: Eltako
+  model: F3Z14D
+  com_profile: A5-12-01
+  device_type: EnergyMeter_3
+  fam14_bus: true
+  fam14_addressing: hex
+  config: NoTariff=true;
+  description: |
+    3-Eingang-Zaehler (Strom/Gas/Wasser kombinierbar).
+
+    Sender-IDs berechnen — alles steht in PCT14:
+      Sender-ID = FAM14-Base-ID | (PCT14-Adresse als Hex + Eingang-Offset)
+      Eingang 1: Offset +0
+      Eingang 2: Offset +1
+      Eingang 3: Offset +2
+
+    Beispiel: FAM14 Base FF800080, F3Z14D-Adresse 35 (= 0x23):
+      Eingang 1 -> FF8000A3
+      Eingang 2 -> FF8000A4
+      Eingang 3 -> FF8000A5
+
+    PCT14 zeigt die Geraeteadresse oben links beim Modul (dezimal).
+    Die FAM14-Base-ID steht im Konfigurationsbereich des FAM14.
+
+    EEP pro Eingang gemaess Eingangstyp im PCT14:
+      A5-12-01 Strom (kWh/W) - A5-12-02 Gas (m³/m³h) - A5-12-03 Wasser (m³/L·min)
+
+    Power-Cycle des F3Z14D loest pro Eingang ein Lerntelegramm aus —
+    das System uebernimmt den EEP-Wechsel automatisch (Auto-EEP-Sync).
+  multi_channel_kind: separate_ids   # 3 Sender-IDs, je 1 pro Sub-Zaehler
+  # F3Z14D sendet KEINE Seriennummer (laut Eltako-Doku nur DSZ14(W)DRS).
+  # Tag/Nacht-Tarif jedoch unterstuetzt — DB0=0x1C wird vom Decoder als
+  # tariff=1 ausgewertet und im selben Channel published.
+  # Alle Counter/Flow-Felder erlaubt, damit Auto-EEP-Wechsel (M47) bei
+  # Umstellung Strom <-> Gas <-> Wasser via PCT14 funktioniert.
+  included_fields: [energy_kwh, current_w, volume_m3, flow_m3h, flow_l_min]
+- manufacturer: Eltako
+  model: F4H12
+  com_profile: A5-10-03
+  device_type: Valve_4
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Eltako
+  model: F4HK14
+  com_profile: A5-10-03
+  device_type: Valve_4
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Eltako
+  model: F4SR14-LED
+  com_profile: A5-38-08(01)
+  device_type: Switch_4
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FAA12
+  com_profile: F6-02-01
+  device_type: Switch_4
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;ShowInvertOption=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FABH130/230V
+  com_profile: F6-02-01
+  device_type: PIR
+  config: SensorType=Eltako_FABH130;WatchdogIntervalSec=0
+  description: Bewegungssensor
+- manufacturer: Eltako
+  model: FABH63
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=Eltako_FABH
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Eltako
+  model: FABH63S
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=Eltako_FABHS
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Eltako
+  model: FABH65S
+  com_profile: A5-08-01
+  device_type: PIR
+  config: SensorType=EEPA50801_Eltako
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Eltako
+  model: FADS60
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: Schnur-Schaltaktor
+- manufacturer: Eltako
+  model: FAE14LPR
+  com_profile: A5-10-03
+  device_type: Valve_2
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Eltako
+  model: FAE14SSR
+  com_profile: A5-10-03
+  device_type: Valve_2
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Eltako
+  model: FAFT60
+  com_profile: A5-04-02
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50402_Eltako;MinTemp=-20;MaxTemp=60;
+  description: Temperatur/Feuchtefühler
+- manufacturer: Eltako
+  model: FAH
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=EEPA50601_RANGE_300_30000_LUX
+  description: Aussenhelligkeitssensor
+- manufacturer: Eltako
+  model: FAH60
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=Eltako_EEPA50601_RANGE_300_30000_LUX_Plus_0_100_LUX
+  description: Aussenhelligkeitssensor
+- manufacturer: Eltako
+  model: FAH63
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=Eltako_EEPA50601_RANGE_300_30000_LUX_Plus_0_100_LUX
+  description: Aussenhelligkeitssensor
+- manufacturer: Eltako
+  model: FAM
+  device_type: Gateway
+- manufacturer: Eltako
+  model: FAM Adressen vergeben
+  device_type: Gateway
+- manufacturer: Eltako
+  model: FAS260SA
+  device_type: Siren
+  config: IODevice/SmartAck=true;CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack
+  description: Alarmsirene
+- manufacturer: Eltako
+  model: FASM60-UC
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1;RecoverButtonState=true;
+  description: Tasterschnittstelle 2
+- manufacturer: Eltako
+  model: FBH
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=ThermokonSR_MDS
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Eltako
+  model: FBH63AP
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=Eltako_FABH
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Eltako
+  model: FBH65
+  com_profile: A5-08-01
+  device_type: PIR
+  config: SensorType=EEPA50801_Eltako
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Eltako
+  model: FBH65B
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=Eltako_FABH
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Eltako
+  model: FBH65S
+  com_profile: A5-08-01
+  device_type: PIR
+  config: SensorType=EEPA50801_Eltako
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Eltako
+  model: FBH65SB
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=Eltako_FABHS
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Eltako
+  model: FBH65TFB
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=Eltako_FABH
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Eltako
+  model: FBH65TFB
+  com_profile: A5-04-02
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50402_Eltako
+  description: Temperatur/Feuchtefühler
+- manufacturer: Eltako
+  model: FCO2TF
+  com_profile: A5-09-04
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_CO2;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Feuchte,CO2
+- manufacturer: Eltako
+  model: FDG14
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_16
+  fam14_bus: true
+  fam14_addressing: hex
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;OnRampTime_Secs=0;OffRampTime_Secs=0;
+  description: REG-Daliaktor
+  teach_in_procedure: |
+    1. Im PCT14 den entsprechenden DALI-Kanal auswählen.
+    2. Am Modul den Drehschalter auf LRN drehen (gewünschter Kanal-Index).
+       LED am Kanal blinkt langsam.
+    3. Hier auf 📡 klicken — Lerntelegramm wird gesendet.
+    4. LED erlischt → erfolgreich.
+    5. Drehschalter zurück auf Automatik (AUTO).
+- manufacturer: Eltako
+  model: FF8
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_2
+  config: NrOfButtons=2
+  description: Funktaster
+- manufacturer: Eltako
+  model: FFG7B
+  com_profile: A5-14-09
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_A51409_MultifuncSensorWindowDoor
+  description: Fenstergriff
+- manufacturer: Eltako
+  model: FFR14
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FFT55B
+  com_profile: A5-04-02
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50402_Eltako;MinTemp=-20;MaxTemp=60;
+  description: Temperatur/Feuchtefühler
+- manufacturer: Eltako
+  model: FFT65B
+  com_profile: A5-04-02
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50402_Eltako;MinTemp=-20;MaxTemp=60;
+  description: Temperatur/Feuchtefühler
+- manufacturer: Eltako
+  model: FHK12
+  com_profile: A5-10-03
+  device_type: Valve_1REG
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Eltako
+  model: FHK14
+  com_profile: A5-10-03
+  device_type: Valve_1REG
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Eltako
+  model: FHK61
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Eltako
+  model: FHK61 ($ab 25/11)
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Eltako
+  model: FHS12
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_3
+  config: NrOfButtons=2
+  description: Handsender 8 oder 12 kanalig, entsprechend viele Symbole in die Arbeitsfläche ziehen!
+- manufacturer: Eltako
+  model: FHS8
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_2
+  config: NrOfButtons=2
+  description: Funktaster
+- manufacturer: Eltako
+  model: FIFT63AP
+  com_profile: A5-04-02
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50402_Eltako
+  description: Temperatur/Feuchtefühler
+- manufacturer: Eltako
+  model: FIH63AP
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=Eltako_EEPA50601_RANGE_300_30000_LUX_Plus_0_100_LUX
+  description: Innenhelligkeitssensor
+- manufacturer: Eltako
+  model: FJ62/12-36V DC
+  com_profile: A5-3F-7F
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=500;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Jalousieaktor
+- manufacturer: Eltako
+  model: FJ62NP
+  com_profile: A5-3F-7F
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=500;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Jalousieaktor
+- manufacturer: Eltako
+  model: FKS-H
+  com_profile: A5-20-04
+  device_type: Valve_1
+  config: BaseTemp=20;ActorType=EEP_A52004_HeatingRadiatorValve
+  description: Stellventilaktor proportional
+- manufacturer: Eltako
+  model: FKS-SV
+  com_profile: A5-20-01
+  device_type: Valve_1
+  config: BaseTemp=20;ActorType=EEP_A52001_HeatingValveBIDI
+  description: Stellventilaktor proportional
+- manufacturer: Eltako
+  model: FLC61NP-230V
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+- manufacturer: Eltako
+  model: FLD61
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Dimmaktor
+  teach_in_procedure: |
+    1. Oberen %-Drehschalter im Uhrzeigersinn bis zum Anschlag auf LRN drehen.
+       Die LED blinkt langsam (1 Hz) — Lernbereitschaft.
+    2. Hier in der UI auf 📡 klicken — Lerntelegramm wird gesendet.
+    3. LED erlischt → Anlernen erfolgreich.
+    4. Drehschalter zurück auf gewünschten Helligkeitswert (1-100%).
+- manufacturer: Eltako
+  model: FLS12/1-10V
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1REG
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;SetBrightnessZeroWhenOff=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Dimmaktor §1-10V
+- manufacturer: Eltako
+  model: FLS12/1-10V ($ab 01/10)
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Dimmaktor §1-10V
+- manufacturer: Eltako
+  model: FMH1W
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+  description: Taste
+- manufacturer: Eltako
+  model: FMH2S-wr
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Minisender mit Trageband
+  order_nr: 30'000'089
+- manufacturer: Eltako
+  model: FMH4
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Funk-Minihandsender
+- manufacturer: Eltako
+  model: FMH8
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_2
+  config: NrOfButtons=2
+  description: Funktaster
+- manufacturer: Eltako
+  model: FMS12
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;ShowInvertOption=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FMS14
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ShowInvertOption=true; ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FMS55ESB
+  com_profile: D2-14-40
+  device_type: MultiSensor
+  config: ReceiveEEP=EEP_D21440_MFS_IndoorTempHumXYZ;TempRange=RANGE_m20_60_C;BrightnessRange=EEP_D21440_MFS_IndoorTempHumXYZ;
+  description: Multisensor
+- manufacturer: Eltako
+  model: FMS61NP-230V ($ab 18/11)
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+- manufacturer: Eltako
+  model: FPE-1
+  device_type: WindowContact
+  config: ReceiveEEP=Eltako_FPE1
+  description: Fenster-/Türkontakt mit Energiegenerator
+- manufacturer: Eltako
+  model: FPE-2
+  device_type: WindowContact
+  config: ReceiveEEP=Eltako_FPE2
+  description: Fenster-/Türkontakt mit Energiegenerator
+- manufacturer: Eltako
+  model: FR62-230V
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Schaltaktor
+- manufacturer: Eltako
+  model: FR62NP-230V
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Schaltaktor
+- manufacturer: Eltako
+  model: FRW-ws
+  com_profile: F6-05-02
+  device_type: SmokeAlarm
+  config: ReceiveEEP=EEP_F60502_SmokeDetector;CommTimeout=50
+  description: Rauchmelder
+- manufacturer: Eltako
+  model: FSA12
+  com_profile: F6-02-01
+  device_type: Switch_4
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;ShowInvertOption=true;Invert=true;
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FSB12 ($ab 39/10)
+  com_profile: A5-3F-7F
+  device_type: Jalousie_2
+  config: PressDurationForDriveToEnd=700;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=none;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Jalousieaktor
+- manufacturer: Eltako
+  model: FSB12 ($früher)
+  com_profile: F6-02-01
+  device_type: Jalousie_2
+  config: PressDurationForDriveToEnd=700;CommandEEP=EEP_F60201_RockerSwitch;ReceiveEEP=none;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Jalousieaktor
+- manufacturer: Eltako
+  model: FSB14
+  com_profile: A5-3F-7F
+  device_type: Jalousie_2
+  fam14_bus: true
+  fam14_addressing: hex
+  config: PressDurationForDriveToEnd=700;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Jalousieaktor
+  teach_in_procedure: |
+    1. Am Modul den Drehschalter des gewünschten Kanals auf LRN.
+       LED des Kanals blinkt langsam (Lernbereitschaft).
+    2. Hier auf 📡 klicken — Lerntelegramm wird gesendet.
+    3. LED erlischt → erfolgreich.
+    4. Drehschalter zurück auf gewünschten Modus (AUTO).
+- manufacturer: Eltako
+  model: FSB61NP ($ab 41/11)
+  com_profile: A5-3F-7F
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=500;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Jalousieaktor
+- manufacturer: Eltako
+  model: FSB61NP ($ab 43/10)
+  com_profile: A5-3F-7F
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=500;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=none;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Jalousieaktor
+- manufacturer: Eltako
+  model: FSB61NP ($früher)
+  com_profile: F6-02-01
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=500;CommandEEP=EEP_F60201_RockerSwitch;ReceiveEEP=none;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Jalousieaktor
+- manufacturer: Eltako
+  model: FSB71-230
+  com_profile: A5-3F-7F
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=700;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Jalousieaktor
+- manufacturer: Eltako
+  model: FSB71-2x-230V
+  com_profile: A5-3F-7F
+  device_type: Jalousie_2
+  config: PressDurationForDriveToEnd=700;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Jalousieaktor
+- manufacturer: Eltako
+  model: FSDG14
+  com_profile: A5-12-01
+  device_type: EnergyMeter
+  description: Funk-Stromzähler
+- manufacturer: Eltako
+  model: FSG14/1-10V
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1REG
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;OnRampTime_Secs=0;OffRampTime_Secs=0;
+  description: REG-Dimmaktor §1-10V
+- manufacturer: Eltako
+  model: FSG70
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: Schnur-Dimmaktor
+- manufacturer: Eltako
+  model: FSG70/1-10V ($ab 35/12)
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;
+  description: Schnur-Dimmaktor
+- manufacturer: Eltako
+  model: FSG71/1-10V
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;
+  description: REG-Dimmaktor §1-10V
+- manufacturer: Eltako
+  model: FSM61-UC
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_2
+  multi_channel_kind: rocker_split
+  config: NrOfButtons=1;RecoverButtonState=true;
+  description: |
+    Tasterschnittstelle 2 — zwei potenzialfreie Eingaenge, sendet wie ein
+    Wippentaster (F6-02-01) ueber eine Sender-ID. Wird oft mit externen
+    Bewegungsmeldern verbunden — beim Loslass-Telegramm zeigt das System
+    die Aktiv-Dauer (press_duration_ms) an, also wie lange Bewegung
+    erkannt wurde. 2 Channels (Eingang A/B) mit derselben RX-ID + Filter
+    nach rocker_side.
+- manufacturer: Eltako
+  model: FSR12
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;ShowInvertOption=true;Invert=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FSR12-4x
+  com_profile: A5-38-08(01)
+  device_type: Switch_4
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=none;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FSR14-2x
+  com_profile: A5-38-08(01)
+  device_type: Switch_2
+  fam14_bus: true
+  fam14_addressing: hex
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: |
+    REG-Schaltaktor 2 Kanaele — 2 Sender-IDs (eine pro Schaltkanal).
+
+    Sender-IDs = FAM14-Base-ID | (PCT14-Adresse als Hex + Kanal-Offset)
+    Live verifiziert am User-System:
+      Base FF800080, Adr 28 (0x1C): K1 -> FF80009C, K2 -> FF80009D
+      Base FF800080, Adr 51 (0x33): K1 -> FF8000B3, K2 -> FF8000B4
+
+    Wichtig: FSR14 sendet Statusbestaetigung (RPS 0x70=AN / 0x50=AUS) NUR
+    wenn die Bus-Adresse in PCT14 → Rueckmeldeliste eingetragen ist.
+  teach_in_procedure: |
+    1. Am Modul den Drehschalter des gewünschten Kanals (1 oder 2) auf LRN.
+       LED des Kanals blinkt langsam.
+    2. Hier auf 📡 klicken — Lerntelegramm wird gesendet.
+    3. LED erlischt → erfolgreich.
+    4. Drehschalter zurück auf AUTO.
+- manufacturer: Eltako
+  model: FSR14-4x
+  com_profile: A5-38-08(01)
+  device_type: Switch_4
+  fam14_bus: true
+  fam14_addressing: hex
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: |
+    REG-Schaltaktor 4 Kanaele — 4 Sender-IDs (eine pro Schaltkanal).
+
+    Sender-IDs = FAM14-Base-ID + (PCT14-Geraeteadresse + Kanal-Offset)
+    Kanaele 1..4: Offsets +0..+3
+
+    Beispiel: Base FF800080, Adresse 16 (dezimal = 0x10):
+      Kanal 1 -> FF800090
+      Kanal 2 -> FF800091
+      Kanal 3 -> FF800092
+      Kanal 4 -> FF800093
+  teach_in_procedure: |
+    1. Am Modul den Drehschalter des gewünschten Kanals (1-4) auf LRN.
+       LED des Kanals blinkt langsam.
+    2. Hier auf 📡 klicken — Lerntelegramm wird gesendet.
+    3. LED erlischt → erfolgreich.
+    4. Drehschalter zurück auf AUTO.
+- manufacturer: Eltako
+  model: FSR14SSR
+  com_profile: A5-38-08(01)
+  device_type: Switch_2
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FSR61-230 ($ab 14/11)
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Schaltaktor
+- manufacturer: Eltako
+  model: FSR61/8-24 UC ($ab 14/11)
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: Schaltaktor
+- manufacturer: Eltako
+  model: FSR61NP ($ab 14/11)
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Schaltaktor
+- manufacturer: Eltako
+  model: FSR61NP ($früher)
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;ShowInvertOption=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Schaltaktor
+- manufacturer: Eltako
+  model: FSR61VA
+  com_profile: F6-02-01/A5-12-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBackEnergyMeter;IODevice/Accepts2ButtonPressOnObserverPin=false;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Schaltaktor
+- manufacturer: Eltako
+  model: FSR70-230V
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: Schnur-Schaltaktor
+- manufacturer: Eltako
+  model: FSR70S
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: Schnur-Schaltaktor
+- manufacturer: Eltako
+  model: FSR70W
+  com_profile: F6-02-01/A5-12-01
+  device_type: Switch_1
+  config: ReceiveEEP=Eltako_FeedBackEnergyMeter;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: Schnur-Schaltaktor
+- manufacturer: Eltako
+  model: FSR71-2x-230V
+  com_profile: A5-38-08(01)
+  device_type: Switch_2
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FSR71NP-2x-230V
+  com_profile: A5-38-08(01)
+  device_type: Switch_2
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FSR71NP-4x-230V
+  com_profile: A5-38-08(01)
+  device_type: Switch_4
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FSR71SSR-2x-230V
+  com_profile: A5-38-08(01)
+  device_type: Switch_2
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FSS12
+  com_profile: A5-12-01
+  device_type: EnergyMeter
+  description: Funk-Stromzähler
+- manufacturer: Eltako
+  model: FSSA-230V
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: Steckdosenschaltaktor
+- manufacturer: Eltako
+  model: FSUD-230V
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;OnRampTime_Secs=0;OffRampTime_Secs=0;
+  description: Steckdosendimmer
+- manufacturer: Eltako
+  model: FSVA-230V
+  com_profile: F6-02-01/A5-12-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBackEnergyMeter;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: Steckdosenschaltaktor
+- manufacturer: Eltako
+  model: FT4
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_2
+  multi_channel_kind: rocker_split
+  config: NrOfButtons=2
+  description: |
+    Funktaster mit 2 Wippen — sendet eine Sender-ID, unterscheidbar
+    nach Wippe (Rocker A=rechts, Rocker B=links) und Position (oben/unten).
+    System legt 2 Channels mit derselben RX-ID an, filtert je Channel
+    nach meta.tele_channel (A bzw. B).
+- manufacturer: Eltako
+  model: FT4F
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_2
+  multi_channel_kind: rocker_split
+  config: NrOfButtons=2
+  description: |
+    Funktaster (Flach) mit 2 Wippen — siehe FT4 fuer ID-Schema.
+- manufacturer: Eltako
+  model: FT55
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_2
+  multi_channel_kind: rocker_split
+  config: NrOfButtons=2
+  description: |
+    Funktaster (55x55 Schalterprogramm) mit 2 Wippen.
+    Sender-ID wird einmal vergeben, Wippen werden ueber rocker_side im
+    Telegramm differenziert (Rocker A vs B). Zwei Channels werden
+    automatisch mit derselben RX-ID + meta.tele_channel='A'/'B' angelegt.
+    Wippe A=links, Wippe B=rechts (Eltako-Konvention).
+- manufacturer: Eltako
+  model: FTF55
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: Eltako
+  model: FTF55D
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: Eltako
+  model: FTF65S
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: Eltako
+  model: FTK
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: Eltako
+  model: FTK-
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: Eltako
+  model: FTKB
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: Eltako
+  model: FTKE-rw
+  device_type: WindowContact
+  config: ReceiveEEP=Eltako_FTKE
+  description: Fenster-/Türkontakt mit Energiegenerator
+- manufacturer: Eltako
+  model: FTN14
+  com_profile: F6-02-01
+  device_type: Switch_1REG
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Eltako
+  model: FTR55D
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_TempLowering_EltakoFTR;SetpointMinTemp=0;SetpointMaxTemp=40;PerformTemperatureSetpointCurve=false;
+  description: akt.Temp,Sollwert
+- manufacturer: Eltako
+  model: FTR55H
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_TempLowering_EltakoFTR;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert
+- manufacturer: Eltako
+  model: FTR65HS
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_TempLowering_EltakoFTR;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert
+- manufacturer: Eltako
+  model: FTR78S
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=8;SetpointMaxTemp=30;
+  description: akt.Temp,Sollwert
+- manufacturer: Eltako
+  model: FTS14EM
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_10
+  config: NrOfButtons=1;RecoverButtonState=true;AutoAssignIds=true;
+  description: |
+    REG-Tasterschnittstelle mit 10 Eingaengen.
+
+    WICHTIG: FTS14EM ist KEIN FAM14-Bus-Modul mit eigener Bus-Adresse.
+    Sie wird ueber zwei Drehschalter am Modul konfiguriert und sendet
+    feste Quasi-Dezimal-IDs (0x10XX..0x14XX), unabhaengig vom FAM14-Block.
+
+      Untere Drehschalter: Gruppe 1 | 101 | 201 | 301 | 401  + Modus UT/RT
+      Oberer Drehschalter: 0 | 10 | 20 | ... | 90
+
+    UT-Modus: 10 Eingaenge -> 10 Sender-IDs (E1..E10)
+    RT-Modus: 5 gepaarte Wippen -> 5 Sender-IDs (E1+E2, E3+E4, ...)
+
+    Beispiele (Gruppe 1, Drehschalter 0):
+      E1 (rechts oben)  -> 0x00001001  Datenbyte 0x70
+      E2 (rechts unten) -> 0x00001002  Datenbyte 0x50
+      E3 (links  oben)  -> 0x00001003  Datenbyte 0x30
+      E4 (links  unten) -> 0x00001004  Datenbyte 0x10
+      E5..E10           -> 0x00001005..0x00001010 (Muster wiederholt)
+
+    Achtung "Quasi-Dezimal": nach 0x1009 kommt 0x1010, nicht 0x100A.
+
+    Die Telegramme dieser IDs laufen ueber den RS485-Bus, NICHT ueber
+    Funk (ohne FTS14FA-Funkausgabemodul). enocean2mqtt empfaengt sie
+    daher nie selbst — die IDs werden im System als Observer an
+    Aktor-Channels gehaengt, um die Verkabelung im Eltako-Bus zu
+    dokumentieren und die Trigger-Quelle visualisieren zu koennen.
+- manufacturer: Eltako
+  model: FTS14EM Tastereingabe
+  device_type: WindowContact
+  config: ReceiveEEP=Eltako_FTS14EMasButtonInput
+  description: Magnetkontakt
+- manufacturer: Eltako
+  model: FTS14EM Tastereingabe
+  device_type: WindowHandle
+  config: ReceiveEEP=Eltako_FTS14EMasTwoButtonInput
+  description: Magnetkontakt
+- manufacturer: Eltako
+  model: FUA55LED
+  com_profile: F6-02-01
+  device_type: Switch_10
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;Invert=true;ShowInvertOption=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: LED-Anzeige
+- manufacturer: Eltako
+  model: FUD12/800W-12DC
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=6000;RelativeDimming=true
+  description: REG-Dimmaktor §800W
+- manufacturer: Eltako
+  model: FUD12NPN ($ab 52/09)
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Dimmaktor
+- manufacturer: Eltako
+  model: FUD14
+  com_profile: A5-38-08(02)
+  fam14_bus: true
+  fam14_addressing: hex
+  device_type: Dimmer_1REG
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;OnRampTime_Secs=0;OffRampTime_Secs=0;
+  description: REG-Dimmaktor
+- manufacturer: Eltako
+  model: FUD14/800W
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1REG
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;OnRampTime_Secs=0;OffRampTime_Secs=0;
+  description: REG-Dimmaktor §800W
+- manufacturer: Eltako
+  model: FUD61NP ($ab 23/11)
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Dimmaktor
+- manufacturer: Eltako
+  model: FUD61NP ($ab 50/09)
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Dimmaktor
+- manufacturer: Eltako
+  model: FUD61NPN ($ab 15/11)
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Dimmaktor
+- manufacturer: Eltako
+  model: FUD70
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: Schnur-Dimmaktor
+- manufacturer: Eltako
+  model: FUD70  ($ab 24/12)
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;
+  description: Schnur-Dimmaktor
+- manufacturer: Eltako
+  model: FUD70S
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: Schnur-Dimmaktor
+- manufacturer: Eltako
+  model: FUT55D
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=0;SetpointMaxTemp=40;PerformTemperatureSetpointCurve=false;
+  description: akt.Temp,Sollwert
+- manufacturer: Eltako
+  model: FUTH65D
+  com_profile: A5-10-12
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint;SetpointMinTemp=0;SetpointMaxTemp=40;PerformTemperatureSetpointCurve=false;
+  description: akt.Temp,Sollwert,Feuchte
+- manufacturer: Eltako
+  model: FWG14MS
+  device_type: WeatherStation
+  config: StationType=ElsnerPO3EnOcean
+  description: Funk-Wetterstation
+- manufacturer: Eltako
+  model: FWS61
+  device_type: WeatherStation
+  config: StationType=ElsnerPO3EnOcean
+  description: Funk-Wetterstation
+- manufacturer: Eltako
+  model: FWZ12-16A
+  com_profile: A5-12-01
+  device_type: EnergyMeter
+  config: NoTariff=true;
+  description: Funk-Stromzähler
+- manufacturer: Eltako
+  model: FWZ14-65A
+  com_profile: A5-12-01
+  device_type: EnergyMeter
+  fam14_bus: true
+  fam14_addressing: hex
+  description: Funk-Stromzähler
+- manufacturer: Eltako
+  model: FWZ61-12A
+  com_profile: A5-12-01
+  device_type: EnergyMeter
+  description: Funk-Stromzähler
+- manufacturer: Eltako
+  model: STE14
+  device_type: BuildingBlock
+  description: Speisegerät
+  order_nr: 13'971
+- manufacturer: Eltako
+  model: TF RWB
+  com_profile: A5-30-03
+  device_type: SmokeAlarm
+  config: ReceiveEEP=EEP_A53003_FourInputTemperature;CommTimeout=50
+  description: Rauchmelder
+- manufacturer: Eltako
+  model: TF-FTSB
+  com_profile: A5-04-02
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50402_Eltako;MinTemp=-20;MaxTemp=60;
+  description: Temperatur/Feuchtefühler
+- manufacturer: Eltako
+  model: TF-FTSB55
+  com_profile: A5-04-03
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50403;MinTemp=-20;MaxTemp=60;
+  description: Temperatur/Feuchtefühler
+- manufacturer: Eltako
+  model: TF-FTSB55
+  com_profile: A5-04-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_A50403;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: Eltako
+  model: TF-LGTF
+  com_profile: A5-04-02
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50402_Eltako;MinTemp=-20;MaxTemp=60;
+  description: Temperatur/Feuchtefühler
+- manufacturer: Eltako
+  model: TF-LGTF
+  com_profile: A5-09-0C
+  device_type: GasSensor
+  config: ReceiveEEP=EEP_A5090C
+- manufacturer: Eltako
+  model: TF-TA55D
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Dimmaktor
+- manufacturer: Eltako
+  model: TF-TA55J
+  com_profile: A5-3F-7F
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=500;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=Eltako_FeedBack
+  description: UP-Jalousieaktor
+- manufacturer: Eltako
+  model: TF-TA55L
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Schaltaktor
+- manufacturer: Eltako
+  model: TF-TA65D
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Dimmaktor
+- manufacturer: Eltako
+  model: TF-TA65J
+  com_profile: A5-3F-7F
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=500;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Jalousieaktor
+- manufacturer: Eltako
+  model: TF-TA65L
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Schaltaktor
+- manufacturer: Eltako
+  model: TF-TTB
+  com_profile: A5-07-01
+  device_type: PiotekTracker
+  config: ReceiveEEP=EEP_A50701_OccupancyWithSupplyVoltageMonitor
+- manufacturer: Eltako
+  model: TF61D
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Dimmaktor
+- manufacturer: Eltako
+  model: TF61J
+  com_profile: A5-3F-7F
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=500;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Jalousieaktor
+- manufacturer: Eltako
+  model: TF61L
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Schaltaktor
+- manufacturer: Eltako
+  model: TF61R
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Schaltaktor
+- manufacturer: EnOcean
+  model: EMCSA
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: EnOcean
+  model: EMDCB
+  device_type: PIR
+  config: IODevice/ManufacturerCode=0x03DA;SensorType=OccupancyLight;Ranges=ThermokonSR_MDS
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: EnOcean
+  model: EMSWB
+  device_type: MultiSensor
+  config: IODevice/ManufacturerCode=0x03DA;BrightnessRange=EnOcean_Multisensor_0_65533_LUX;TempRange=GENERIC;MinTemp=-33;MaxTemp=33;
+  description: Multisensor
+- manufacturer: EnOcean
+  model: EOSC
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy
+  description: Bewegungsmelder
+- manufacturer: EnOcean
+  model: EOSW
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy
+  description: Bewegungsmelder
+- manufacturer: EnOcean
+  model: ETHS
+  com_profile: A5-04-03
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50403;MinTemp=-20;MaxTemp=60;
+  description: Temperatur/Feuchtefühler
+- manufacturer: EnOcean
+  model: EWSDB
+  device_type: PTMSwitchModule
+  config: IODevice/ManufacturerCode=0x03DA;NrOfButtons=2
+- manufacturer: EnOcean
+  model: PTM 250
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Wandsender
+- manufacturer: EnOcean
+  model: PTM 250C
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Wandsender
+- manufacturer: EnOcean
+  model: RCM 250
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: 1 Kanal
+- manufacturer: EnOcean
+  model: RCM120
+  device_type: RCM120
+- manufacturer: EnOcean
+  model: STM 250
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: EnOcean
+  model: STM110
+  device_type: STM100
+- manufacturer: EnOcean
+  model: STM110C
+  device_type: STM100
+- manufacturer: Funkstuhltechnik
+  model: 450FU-BLS/KKF
+  device_type: RadioChair
+  description: Stuhlsensor
+- manufacturer: Funkstuhltechnik
+  model: 4511FU-E ST/KKF
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: geschaltete Steckdose
+- manufacturer: Funkstuhltechnik
+  model: 451FU-E m.Wa./KKF
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor mit Wagosteckern
+- manufacturer: Funkstuhltechnik
+  model: 451FU-E m.Wi./KKF
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor mit Wielandsteckern
+- manufacturer: Funkstuhltechnik
+  model: BWM-FUS-2
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy;Ranges=Funkstuhltechnik_BWM_FUS2;WatchdogIntervalSec=0
+  description: Mobiler Funk-Bewegungsmelder
+- manufacturer: Funkstuhltechnik
+  model: FB-230-S2e
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Einbau-Schaltaktor 2 Kanal 2x250W
+- manufacturer: Funkstuhltechnik
+  model: FB-230_TF1e
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Einbau-Schaltaktor Tastenfolger
+- manufacturer: Funkstuhltechnik
+  model: SG-FUS-24-230
+  device_type: FSVoltageSensor
+  description: Spannungssensor
+- manufacturer: Funkstuhltechnik
+  model: USB-BWM-FUS-2
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy;Ranges=Funkstuhltechnik_BWM_FUS2;WatchdogIntervalSec=0
+  description: USB Funk-Bewegungsmelder
+- manufacturer: Funkstuhltechnik
+  model: USB-FUS-S2
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  description: USB gesteuerter Sender
+- manufacturer: Generisch
+  model: $tBewegungsmelder
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy;Ranges=BinaryInput
+- manufacturer: Generisch
+  model: $tBewegungsmelder
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy;Ranges=BinaryInput
+- manufacturer: Generisch
+  model: $tGefrierschrank
+  device_type: Freezer
+- manufacturer: Generisch
+  model: $tGeschirrspühler
+  device_type: Dishwasher
+- manufacturer: Generisch
+  model: $tKühl/Gefrierschrank
+  device_type: FridgeFreezer
+- manufacturer: Generisch
+  model: $tKühlschrank
+  device_type: Refrigerator
+- manufacturer: Generisch
+  model: $tRaumfühler
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;PerformTemperatureSetpointCurve=False;
+- manufacturer: Generisch
+  model: $tTumbler
+  device_type: TumbleDryer
+- manufacturer: Generisch
+  model: $tWaschmaschine
+  device_type: WashingMachine
+  config: MachineType=Type1
+- manufacturer: Generisch
+  model: DS18B20
+  device_type: Temperature
+  config: Range=GENERIC;MinTemp=-55;MaxTemp=125;
+  description: Temperaturfühler
+- manufacturer: Generisch
+  model: PTM 2
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Taste
+- manufacturer: Generisch
+  model: Zähler
+  device_type: EnergyMeter
+  description: Funk-Stromzähler
+- manufacturer: Hautau
+  model: enOA
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: Hoppe
+  model: Amsterdam
+  com_profile: F6-10-00
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_F61000_WindowHandle
+  description: Fenstergriff Edelstahl
+- manufacturer: Hoppe
+  model: Atlanta Hebe Schiebetür
+  com_profile: F6-10-00
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_F61000_WindowHandle
+  description: Griff für Hebe-Schiebetür
+- manufacturer: Hoppe
+  model: Atlanta Hebe-Schiebetür
+  com_profile: F6-10-00
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_F61000_WindowHandle
+  description: Griff für Hebe-Schiebetür
+- manufacturer: Hoppe
+  model: Atlanta messing
+  com_profile: F6-10-00
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_F61000_WindowHandle
+  description: Fenstergriff Messing
+- manufacturer: Hoppe
+  model: Atlanta weiss
+  com_profile: F6-10-00
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_F61000_WindowHandle
+  description: Fenstergriff weiss
+- manufacturer: Hoppe
+  model: Trondheim
+  com_profile: D2-06-40
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_D20640_LockabelWindowHandleWithStatusReporting
+  description: Fenstergriff Edelstahl
+- manufacturer: InnoGreen
+  model: LED Multi Treiber EnOcean 15W-60W
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;OnRampTime_Secs=3;OffRampTime_Secs=3;ObsOnRampTimeMS=1400;ObsOffRampTimeMS=1800;LongBtnPressTimeMS=1000;DimUpAtOffCmd=false
+  description: §15W-60W
+- manufacturer: InnoGreen
+  model: LED Multi Treiber EnOcean 5W-40W
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;OnRampTime_Secs=3;OffRampTime_Secs=3;ObsOnRampTimeMS=1400;ObsOffRampTimeMS=1800;LongBtnPressTimeMS=1000;DimUpAtOffCmd=false
+  description: §5W-40W
+- manufacturer: InnoGreen
+  model: LED-PAL warm-tageslichtweiss
+  device_type: WCDimmer_1
+  config: ColorCurve=0,0,0.33,0.05,0.66,0.10,1,0.15;
+  description: Weissfarbenmischer
+- manufacturer: Jäger Direkt - OPUS
+  model: 451 FU-BEP DAB
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;OnRampTime_Secs=3;OffRampTime_Secs=3;ObsOnRampTimeMS=1400;ObsOffRampTimeMS=1800;LongBtnPressTimeMS=1000;DimUpAtOffCmd=false
+  description: §210W
+- manufacturer: Jäger Direkt - OPUS
+  model: Anlegetemperaturfühler
+  com_profile: A5-02-17
+  device_type: Temperature
+  config: Range=RANGE_10_90_C
+  description: Anlegetemperaturfühler
+- manufacturer: Jäger Direkt - OPUS
+  model: Aussentemperaturfühler
+  com_profile: A5-02-14
+  device_type: Temperature
+  config: Range=RANGE_m20_60_C
+  description: Aussentemperaturfühler
+- manufacturer: Jäger Direkt - OPUS
+  model: EMCSA CA-1
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: Jäger Direkt - OPUS
+  model: Fenstergriff§(561.420.02)
+  com_profile: F6-10-00
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_F61000_WindowHandle
+  description: Fenstergriff weiss
+- manufacturer: Jäger Direkt - OPUS
+  model: Fenstergriff§(561.420.23)
+  com_profile: F6-10-00
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_F61000_WindowHandle
+  description: Fenstergriff Edelstahl
+- manufacturer: Jäger Direkt - OPUS
+  model: Fenstergriff§(561.425.02)
+  com_profile: F6-10-00
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_F61000_WindowHandle
+  description: Fenstergriff weiss
+- manufacturer: Jäger Direkt - OPUS
+  model: Fenstergriff§(561.425.23)
+  com_profile: F6-10-00
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_F61000_WindowHandle
+  description: Fenstergriff Edelstahl
+- manufacturer: Jäger Direkt - OPUS
+  model: Funk-Rauchmelder
+  com_profile: F6-05-02
+  device_type: SmokeAlarm
+  config: ReceiveEEP=EEP_F60502_SmokeDetector;CommTimeout=50
+  description: Rauchmelder§(563.065)
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-HKV-HK-2
+  com_profile: A5-10-03
+  device_type: Valve_2
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-HKV-HK-SS2
+  com_profile: A5-10-03
+  device_type: Valve_2
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-R-HK-2
+  com_profile: A5-10-03
+  device_type: Valve_1REG
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-R-JRG-2
+  com_profile: A5-3F-7F
+  device_type: Jalousie_2
+  config: PressDurationForDriveToEnd=700;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Jalousieaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-R-MS
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ShowInvertOption=true; ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-R-NF-2
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-R-SG/1-10V
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1REG
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;OnRampTime_Secs=0;OffRampTime_Secs=0;
+  description: REG-Dimmaktor §1-10V
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-R-SR-2
+  com_profile: A5-38-08(01)
+  device_type: Switch_2
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-R-SR-4
+  com_profile: A5-38-08(01)
+  device_type: Switch_4
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-R-SR-SS2
+  com_profile: A5-38-08(01)
+  device_type: Switch_2
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=Eltako_FeedBack;RebootBehaviour=leave;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-R-TLN
+  com_profile: F6-02-01
+  device_type: Switch_1REG
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-R-UD
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1REG
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;OnRampTime_Secs=0;OffRampTime_Secs=0;
+  description: REG-Dimmaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-2.0A-R-UD-800W
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1REG
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;OnRampTime_Secs=0;OffRampTime_Secs=0;
+  description: REG-Dimmaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-R12V-HKR-2
+  com_profile: A5-10-03
+  device_type: Valve_2
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-R12V-JRG-2 ($ab 39/10)
+  com_profile: A5-3F-7F
+  device_type: Jalousie_2
+  config: PressDurationForDriveToEnd=700;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=none;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Jalousieaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-R12V-JRG-2 ($früher)
+  com_profile: F6-02-01
+  device_type: Jalousie_2
+  config: PressDurationForDriveToEnd=700;CommandEEP=EEP_F60201_RockerSwitch;ReceiveEEP=none
+  description: REG-Jalousieaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-R12V-LZ/1-10V
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Dimmaktor §1-10V
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-R12V-LZ/UD
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1REG
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;SetBrightnessZeroWhenOff=true;
+  description: REG-Dimmaktor §1-10V
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-R12V-MF-2
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;ShowInvertOption=true;
+  description: REG-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-R12V-SR-4
+  com_profile: F6-02-01
+  device_type: Switch_4
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;ShowInvertOption=true;Invert=true;
+  description: REG-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-R12V-UD ($ab 52/09)
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Dimmaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-R12V-UD ($früher)
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1REG
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: REG-Dimmaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-U230V-HKR-1
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=-20;SetpointOffsetMax=20;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=3;ProvidesEnergySaving=false;BaseTemp=20;
+  description: Stellventilaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-U230V-JRG ($ab 11/13)
+  com_profile: A5-3F-7F
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=500;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Jalousieaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-U230V-JRG ($ab 43/10)
+  com_profile: A5-3F-7F
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=500;CommandEEP=EEP_A53F7F_EltakoCentralCommand;ReceiveEEP=none;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Jalousieaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-U230V-SM-2 ($ab 18/11)
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-U230V-SR ($ab 33/13)
+  device_type: Switch_1
+  config: ReceiveEEP=Eltako_FeedBack;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-U230V-SR-VA
+  com_profile: A5-38-08(01)/A5-12-01
+  device_type: Switch_1
+  config: ReceiveEEP=Eltako_FeedBackEnergyMeter;
+  description: UP-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-U230V-UD
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Dimmaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-U230V-UD ($ab 33/13)
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;IODevice/Accepts2ButtonPressOnObserverPin=false
+  description: UP-Dimmaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-A-U230V-UD-oN
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true
+  description: UP-Dimmaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-AH60
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=Eltako_EEPA50601_RANGE_300_30000_LUX_Plus_0_100_LUX
+  description: §0..30000Lux
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-GW-R8-230V-T-2
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1;RecoverButtonState=true;
+  description: Tasterschnittstelle 2
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-GW-U230V-T-2
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1;RecoverButtonState=true;
+  description: Tasterschnittstelle 2
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-HS-12
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_3
+  config: NrOfButtons=2;
+  description: Handsender
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-HS-8
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_2
+  config: NrOfButtons=2;
+  description: Handsender
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-MHS-4
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Funk-Minihandsender
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-Z-R12V-SM3
+  com_profile: A5-12-01
+  device_type: EnergyMeter
+  description: Funk-Stromzähler
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-Z-R12V-SO
+  com_profile: A5-12-01
+  device_type: EnergyMeter
+  description: Funk-Stromzähler
+- manufacturer: Jäger Direkt - OPUS
+  model: GN-Z-R230V-W
+  device_type: EnergyMeter
+  description: Funk-Stromzähler
+- manufacturer: Jäger Direkt - OPUS
+  model: Handsender 4 fach
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Handsender 4 Kanal
+- manufacturer: Jäger Direkt - OPUS
+  model: Heizungsaktor 8-fach
+  com_profile: A5-10-03
+  device_type: Valve_8
+  config: SetpointOffsetMin=-10;SetpointOffsetMax=10;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=1;ProvidesEnergySaving=true;BaseTemp=21;BaseTempIsConfigurable=true;
+  description: "8-fach Funk-Empfänger\r\nmit 8 digitalen Ausgängen"
+- manufacturer: Jäger Direkt - OPUS
+  model: Heizungsstellantrieb
+  com_profile: A5-20-01
+  device_type: Valve_1
+  config: BaseTemp=20;ActorType=EEP_A52001_HeatingValveBIDI
+  description: Stellventilaktor proportional
+- manufacturer: Jäger Direkt - OPUS
+  model: Kabeltemperaturfühler
+  com_profile: A5-02-14
+  device_type: Temperature
+  config: Range=RANGE_m20_60_C
+  description: Kabeltemperaturfühler
+- manufacturer: Jäger Direkt - OPUS
+  model: Kartenschalter 63
+  device_type: KeyCardSwitch
+  config: KeyCardSwitchType=uncoded
+  description: Funkschalter für Zugangskarten
+- manufacturer: Jäger Direkt - OPUS
+  model: Kartenschalter mit Codierung
+  device_type: KeyCardSwitch
+  config: KeyCardSwitchType=coded_2
+  description: Funkschalter für Zugangskarten
+- manufacturer: Jäger Direkt - OPUS
+  model: LED-Dimmer EnO
+  device_type: Dimmer_4
+  config: CommandEEP=MSC_HJH;ReceiveEEP=MSC_HJH;SetBrightnessZeroWhenOff=true;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=300;DimUpAtOffCmd=true
+  description: Dimmaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS Bridge LED-Funk-Dimmer
+  com_profile: D2-01-03
+  device_type: DimmerViAct_1
+  bundled_ptm_count: 2    # M79: VLD-Dimmer + 2-fach PTM-Wippe im gleichen Gehaeuse
+  config: CommandEEP=EEP_D201XX_VLD;ReceiveEEP=EEP_D201XX_VLD;IODevice/SupportsReMan=true;IODevice/RPSDevChanCentralOnMappingParAddr=7;IODevice/RPSDevChanCentralOffMappingParAddr=8;IODevice/RPSDevChanMappingMethode=BitList;
+  description: Dimmaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS Bridge UP-eSchalter 1 Kanal 16A-2P
+  com_profile: D2-01-01
+  device_type: SwitchViAct_1
+  bundled_ptm_count: 2    # M79: 1 Aktor + 2-fach PTM-Doppelwippe
+  config: CommandEEP=EEP_D201XX_VLD;ReceiveEEP=EEP_D201XX_VLD;IODevice/SupportsReMan=true;IODevice/RPSDevChanCentralOnMappingParAddr=7;IODevice/RPSDevChanCentralOffMappingParAddr=8;IODevice/RPSDevChanMappingMethode=BitList;
+  description: Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS Bridge UP-eSchalter 1 Kanal V1
+  com_profile: D2-01-01
+  device_type: SwitchViAct_1
+  bundled_ptm_count: 2    # M79: 1 Aktor + 2-fach PTM-Doppelwippe
+  config: CommandEEP=EEP_D201XX_VLD;ReceiveEEP=EEP_D201XX_VLD;IODevice/SupportsReMan=true;IODevice/RPSDevChanCentralOnMappingParAddr=7;IODevice/RPSDevChanCentralOffMappingParAddr=8;IODevice/RPSDevChanMappingMethode=BitList;
+  description: Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS Bridge UP-eSchalter 1 Kanal V2
+  com_profile: D2-01-01
+  device_type: SwitchViAct_1
+  bundled_ptm_count: 2    # M79: 1 Aktor + 2-fach PTM-Doppelwippe
+  config: CommandEEP=EEP_D201XX_VLD;ReceiveEEP=EEP_D201XX_VLD;IODevice/SupportsReMan=true;IODevice/RPSDevChanCentralOnMappingParAddr=7;IODevice/RPSDevChanCentralOffMappingParAddr=8;IODevice/RPSDevChanMappingMethode=BitList;
+  description: Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS Bridge UP-eSchalter 2 Kanal V1
+  com_profile: D2-01-01
+  device_type: SwitchViAct_2
+  bundled_ptm_count: 2    # M79: 2 Aktoren + 2-fach PTM-Doppelwippe (Aktor-Mapping vom Installateur)
+  config: CommandEEP=EEP_D201XX_VLD;ReceiveEEP=EEP_D201XX_VLD;IODevice/SupportsReMan=true;IODevice/RPSDevChanCentralOnMappingParAddr=7;IODevice/RPSDevChanCentralOffMappingParAddr=8;IODevice/RPSDevChanMappingParAddr=10;IODevice/RPSDevChanMappingMethode=BitList;
+  description: Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS Bridge UP-eSchalter 2 Kanal V2
+  com_profile: D2-01-01
+  device_type: SwitchViAct_2
+  bundled_ptm_count: 2    # M79: 2 Aktoren + 2-fach PTM-Doppelwippe
+  config: CommandEEP=EEP_D201XX_VLD;ReceiveEEP=EEP_D201XX_VLD;IODevice/SupportsReMan=true;IODevice/RPSDevChanCentralOnMappingParAddr=7;IODevice/RPSDevChanCentralOffMappingParAddr=8;IODevice/RPSDevChanMappingParAddr=10;IODevice/RPSDevChanMappingMethode=BitList;
+  description: Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS Bridge UP-eSchalter Jal V1
+  com_profile: D2-05-02
+  device_type: JalousieViAct_1
+  bundled_ptm_count: 2    # M79: 1 Rolladen-Aktor + 2-fach PTM (auf/ab)
+  config: CommandEEP=EEP_D20502_VLD;ReceiveEEP=EEP_D20502_VLD;IODevice/SupportsReMan=true;IODevice/RPSDevChanCentralOnMappingParAddr=7;IODevice/RPSDevChanCentralOffMappingParAddr=8;IODevice/RPSDevChanMappingMethode=BitList;
+  description: UP-Jalousieaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS Bridge UP-eSchalter Jal V2
+  com_profile: D2-05-02
+  device_type: JalousieViAct_1
+  bundled_ptm_count: 2    # M79: 1 Rolladen-Aktor + 2-fach PTM (auf/ab)
+  config: CommandEEP=EEP_D20502_VLD;ReceiveEEP=EEP_D20502_VLD;IODevice/SupportsReMan=true;IODevice/RPSDevChanCentralOnMappingParAddr=7;IODevice/RPSDevChanCentralOffMappingParAddr=8;IODevice/RPSDevChanMappingMethode=BitList;
+  description: UP-Jalousieaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS SMS AAL
+  com_profile: A5-07-01
+  device_type: PIRViSns_SMS
+  config: IODevice/SupportsReMan=true;SensorType=EEPA50701_Occupancy;WatchdogIntervalSec = 900;IODevice/RxWindowOpenCycleParameterIndex=7;IODevice/RxWindowOpenCycleScaling=10;
+  description: Bewegungsmelder
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS SMS Anwesenheit
+  com_profile: A5-07-03
+  device_type: PIRViSns_SMS
+  config: IODevice/SupportsReMan=true;SensorType=EEPA50703_Occupancy;WatchdogIntervalSec = 900;IODevice/RxWindowOpenCycleParameterIndex=7;IODevice/RxWindowOpenCycleScaling=10;
+  description: Bewegungsmelder
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS SMS Multifunktion
+  com_profile: F6-02-01
+  device_type: PIRViSns_SMSMul
+  config: IODevice/SupportsReMan=true;SensorType=EEPF60201_RockerSimulation;WatchdogIntervalSec = 900;IODevice/RxWindowOpenCycleParameterIndex=7;IODevice/RxWindowOpenCycleScaling=10;
+  description: Bewegungsmelder
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS SMS Standard
+  com_profile: F6-02-01
+  device_type: PIRViSns_SMS
+  config: IODevice/SupportsReMan=true;SensorType=EEPF60201_RockerSimulation;WatchdogIntervalSec= 900;IODevice/RxWindowOpenCycleParameterIndex=7;IODevice/RxWindowOpenCycleScaling=10;
+  description: Bewegungsmelder
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS Sens 55 TFL
+  com_profile: D2-14-54
+  device_type: MultiSensor
+  config: ReceiveEEP=EEP_D21454_MFS_LeakTempHum;TempRange=RANGE_m20_60_C;
+  description: Multisensor
+- manufacturer: Jäger Direkt - OPUS
+  model: OPUS Sens 55 TFL
+  com_profile: D2-14-54
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_D21454_MFS_LeakTempHum;TempRange=RANGE_m20_60_C
+  description: Temperatur/Feuchtefühler
+- manufacturer: Jäger Direkt - OPUS
+  model: RTFS 301
+  com_profile: A5-10-14
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Feuchte
+- manufacturer: Jäger Direkt - OPUS
+  model: RTFS 302
+  com_profile: A5-10-12
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Feuchte
+- manufacturer: Jäger Direkt - OPUS
+  model: RTS 101
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: Jäger Direkt - OPUS
+  model: RTS 102
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert
+- manufacturer: Jäger Direkt - OPUS
+  model: RTS 103
+  com_profile: A5-10-06
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Slider;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Schieber
+- manufacturer: Jäger Direkt - OPUS
+  model: RTS 104
+  com_profile: A5-10-05
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Occupancy;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Präsenztaste
+- manufacturer: Jäger Direkt - OPUS
+  model: RTS 202
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_TempLowering_EltakoFTR;SetpointMinTemp=0;SetpointMaxTemp=40;PerformTemperatureSetpointCurve=false;
+  description: akt.Temp,Sollwert
+- manufacturer: Jäger Direkt - OPUS
+  model: RTS55
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: |
+    OPUS Raumthermostat (Basis) — nur Temperatur, kein Sollwertsteller,
+    kein Praesenzschieber. EEP A5-10-03 sendet zwar setpoint, aber das
+    Geraet hat physisch kein Drehrad → wir publishen nur temperature_c.
+  included_fields: [temperature_c]
+- manufacturer: Jäger Direkt - OPUS
+  model: RTS55 S
+  com_profile: A5-10-06
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Slider;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: |
+    OPUS Raumthermostat S = mit Praesenzschieber (Anwesend/Abwesend),
+    OHNE Sollwertsteller. EEP A5-10-06 sendet Slider; setpoint wird
+    nicht publiziert, weil kein Drehrad am Geraet.
+  included_fields: [temperature_c, day]
+- manufacturer: Jäger Direkt - OPUS
+  model: RTS55 SP
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: |
+    OPUS Raumthermostat SP = mit Sollwertsteller (Drehrad), OHNE Praesenzschieber.
+    EEP A5-10-03 — Temperatur + Sollwert-Korrektur (-3..+3 °C).
+  included_fields: [temperature_c, setpoint_offset_c]
+- manufacturer: Jäger Direkt - OPUS
+  model: RTS55 SP+S
+  com_profile: A5-10-06
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Slider;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: |
+    OPUS Raumthermostat SP+S = mit Sollwertsteller UND Praesenzschieber.
+    EEP A5-10-06 — alle 3 Felder relevant: Temperatur + Sollwert-Korrektur
+    + Tag/Nacht-Slider (Anwesend/Abwesend).
+  included_fields: [temperature_c, setpoint_offset_c, day]
+- manufacturer: Jäger Direkt - OPUS
+  model: SA-DU-230V
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ReceiveEEP=Eltako_FeedBack;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;RelativeDimming=true;DimUpAtOffCmd=false;OnRampTime_Secs=0;OffRampTime_Secs=0;
+  description: Steckdosendimmer
+- manufacturer: Jäger Direkt - OPUS
+  model: SA-Z-230V
+  device_type: Switch_1
+  config: ReceiveEEP=Eltako_FeedBackEnergyMeter;
+  description: Steckdosenschaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: Schaltaktor 1-fach EB/UP
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: 1 Kanal
+- manufacturer: Jäger Direkt - OPUS
+  model: Schaltaktor 1-fach UP
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: 1 Kanal
+- manufacturer: Jäger Direkt - OPUS
+  model: Schaltaktor 1-fach UP,Multifunk.
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: 1 Kanal
+- manufacturer: Jäger Direkt - OPUS
+  model: Schaltaktor 2-fach UP,Multifunk.
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: UP-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: Schaltaktor 4-fach EB, 230VAC
+  com_profile: F6-02-01
+  device_type: Switch_4
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;ShowInvertOption=true;
+- manufacturer: Jäger Direkt - OPUS
+  model: Schaltaktor 4-fach REG, 230VAC
+  com_profile: F6-02-01
+  device_type: Switch_4
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;ShowInvertOption=true;
+  description: REG-Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: Schaltaktor Wechselkontakt
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: UP-Lastaktor §13A
+- manufacturer: Jäger Direkt - OPUS
+  model: Steckdosendimmaktor
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;OnRampTime_Secs=3;OffRampTime_Secs=3;ObsOnRampTimeMS=1400;ObsOffRampTimeMS=1800;LongBtnPressTimeMS=1000;DimUpAtOffCmd=false
+  description: Steckdosendimmer
+- manufacturer: Jäger Direkt - OPUS
+  model: Steckdosenschaltaktor
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: Steckerleiste 1 Kanal
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: Steckerleiste 2 Kanal
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: Jäger Direkt - OPUS
+  model: TCM-310 LAN-GW
+  device_type: Gateway
+- manufacturer: Jäger Direkt - OPUS
+  model: Tür- und Fensterkontakt
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: Jäger Direkt - OPUS
+  model: USB Sender 1-fach
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  description: USB gesteuerter Sender
+- manufacturer: Jäger Direkt - OPUS
+  model: Wandsender 2 Kanal
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+  description: Wandsender 2 Kanal
+- manufacturer: Jäger Direkt - OPUS
+  model: Wandsender 4 Kanal
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Wandsender 4 Kanal
+- manufacturer: Jäger Direkt - OPUS
+  model: gN Aussenlichtsensor Solar
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=EEPA50601_RANGE_300_30000_LUX
+  description: Aussenhelligkeitssensor
+- manufacturer: Jäger Direkt - OPUS
+  model: gN Bewegung-Helligkeit 482
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=ThermokonSR_MDS
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Jäger Direkt - OPUS
+  model: gN Präsenzmelder Solar
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=OmnioEagle;
+  description: Präsenz
+- manufacturer: Jäger Direkt - OPUS
+  model: gN Raumbedienung Typ S (Thanos)
+  device_type: RoomTemperatureControl
+  config: SetpointMinTemp=15;SetpointMaxTemp=25;ShowThanosTypes=True;
+  description: akt.Temp,Sollwert
+- manufacturer: Jäger Direkt - OPUS
+  model: gN Raumbedienung Typ S (Thanos)
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: Jäger Direkt - OPUS
+  model: gN Raumbedienung Typ S (Thanos)
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+- manufacturer: Jäger Direkt - OPUS
+  model: gN Sensor-Aussenhelligkeit
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=Eltako_EEPA50601_RANGE_300_30000_LUX_Plus_0_100_LUX
+  description: Aussenhelligkeitssensor
+- manufacturer: Jäger Direkt - OPUS
+  model: gN Sensor-Bewegung Helligkeit
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=Eltako_FABH
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Jäger Direkt - OPUS
+  model: gN Sensor-Helligkeit
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=Eltako_EEPA50601_RANGE_300_30000_LUX_Plus_0_100_LUX
+  description: Innenhelligkeitssensor
+- manufacturer: Jäger Direkt - OPUS
+  model: gN Sensor-Temperatur Feuchte
+  com_profile: A5-04-02
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50402_Eltako
+  description: Temperatur/Feuchtefühler
+- manufacturer: Jäger Direkt - OPUS
+  model: gN Wassermelder
+  device_type: Leakage
+  config: ReceiveEEP=JaegerDirekt;HasBattery=false;CommTimeout=0
+  description: Wassermelder
+- manufacturer: Jäger Direkt - OPUS
+  model: gn Temp/Feuchte/CO2
+  com_profile: A5-09-04
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_CO2;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Feuchte,CO2
+- manufacturer: Kopp
+  model: $tBewegungsmelder
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=ThermokonSR_MDS
+- manufacturer: Kopp
+  model: $tFensterkontakt
+  device_type: WindowContact
+  order_nr: '862701017'
+- manufacturer: Kopp
+  model: $tFensterkontakt(Cloud)
+  device_type: WindowContact
+- manufacturer: Kopp
+  model: $tHelligkeit
+  device_type: Brightness
+  config: BrightnessRange=EnOcean_Multisensor_0_65533_LUX;
+- manufacturer: Kopp
+  model: $tMultisensor
+  device_type: MultiSensor
+  config: ReceiveEEP=KoppBC_MultiSensorRaw;ReceiveEEP=KoppMulitsensor;TempRange=RANGE_m20_60_C;BrightnessRange=EEP_D21441_MFS_IndoorTempHumXYZIllWindow;
+  description: Multisensor
+  order_nr: '867102015'
+- manufacturer: Kopp
+  model: $tRaumthermostat
+  device_type: RoomTemperatureControl
+  config: SensorType=EZRHeating;SetpointMinTemp=5;SetpointMaxTemp=30;
+  description: Raumthermostat
+- manufacturer: Kopp
+  model: Basisstation 4Hz.
+  device_type: EZRBaseStation_4
+  config: ActorType=EZRBaseStation
+  description: Stellventilaktor
+- manufacturer: Kopp
+  model: Ehmann LED-Dimmer
+  device_type: Dimmer_1
+  config: CommandEEP=KoppBC;
+  description: Dimmaktor
+  order_nr: '863202014'
+- manufacturer: Kopp
+  model: Energieautarkes Wandschaltermodul
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Taster
+  order_nr: '867001011'
+- manufacturer: Kopp
+  model: HUAW.SUN2000-10KTL-M1
+  com_profile: TCP:502,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Huawei;PeekPower=10;EnableStorage=true;
+- manufacturer: Kopp
+  model: HUAW.SUN2000-12KTL-M1
+  com_profile: TCP:502,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Huawei;PeekPower=12;EnableStorage=true;
+- manufacturer: Kopp
+  model: HUAW.SUN2000-15KTL-M1
+  com_profile: TCP:502,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Huawei;PeekPower=15;EnableStorage=true;
+- manufacturer: Kopp
+  model: HUAW.SUN2000-17KTL-M1
+  com_profile: TCP:502,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Huawei;PeekPower=17;EnableStorage=true;
+- manufacturer: Kopp
+  model: HUAW.SUN2000-20KTL-M1
+  com_profile: TCP:502,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Huawei;PeekPower=20;EnableStorage=true;
+- manufacturer: Kopp
+  model: HUAW.SUN2000-3KTL-M1
+  com_profile: TCP:502,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Huawei;PeekPower=3;EnableStorage=true;
+- manufacturer: Kopp
+  model: HUAW.SUN2000-4KTL-M1
+  com_profile: TCP:502,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Huawei;PeekPower=4;EnableStorage=true;
+- manufacturer: Kopp
+  model: HUAW.SUN2000-5KTL-M1
+  com_profile: TCP:502,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Huawei;PeekPower=5;EnableStorage=true;
+- manufacturer: Kopp
+  model: HUAW.SUN2000-6KTL-M1
+  com_profile: TCP:502,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Huawei;PeekPower=6;EnableStorage=true;
+- manufacturer: Kopp
+  model: HUAW.SUN2000-8KTL-M1
+  com_profile: TCP:502,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Huawei;PeekPower=8;EnableStorage=true;
+- manufacturer: Kopp
+  model: Hybrider Dimmer 2-Draht, 1-Kanal
+  device_type: Dimmer_1
+  config: CommandEEP=KoppBC;
+  description: Dimmaktor
+  order_nr: '863202014'
+- manufacturer: Kopp
+  model: Hybrider Rollladen 4-Draht, 2-Kanal
+  device_type: Jalousie_1
+  config: CommandEEP=KoppBC;ReceiveEEP=KoppBC;SynchronizationMode=byActuator;PositionSpecificationMode=none;SlatsSpecificationMode=none;
+  description: Jalousieaktor
+  order_nr: '863004034'
+- manufacturer: Kopp
+  model: Hybrider Schalter 2-Draht, 1-Kanal
+  device_type: Switch_1
+  description: Schaltaktor
+  order_nr: '863002018'
+- manufacturer: Kopp
+  model: Hybrider Schalter 3-Draht, 1-Kanal
+  device_type: Switch_1
+  description: Schaltaktor
+  order_nr: '863003019'
+- manufacturer: Kopp
+  model: Hybrider Schalter 4-Draht, 2-Kanal
+  device_type: Switch_2
+  description: Schaltaktor
+  order_nr: '863004027'
+- manufacturer: Kopp
+  model: Hybrider Taster 3-Draht, 1-Kanal
+  device_type: Switch_1
+  description: Schaltaktor
+  order_nr: '863003019'
+- manufacturer: Kopp
+  model: Kuara 10.0-3-H
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=13;EnableStorage=true;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '433410005'
+- manufacturer: Kopp
+  model: Kuara 12.0-3-H
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=15;EnableStorage=true;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '433412007'
+- manufacturer: Kopp
+  model: Kuara 8.0-3-H
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=10;EnableStorage=true;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '433408006'
+- manufacturer: Kopp
+  model: Kuara-10.0-2-T
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=15;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432510038'
+- manufacturer: Kopp
+  model: Kuara-10.5-3-S
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=10;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432510502'
+- manufacturer: Kopp
+  model: Kuara-12.0-2-T
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=18;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432512030'
+- manufacturer: Kopp
+  model: Kuara-15.0-2-T
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=22;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432515002'
+- manufacturer: Kopp
+  model: Kuara-2.0-1-S
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=2;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432502002'
+- manufacturer: Kopp
+  model: Kuara-20.0-2-T
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=30;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432520004'
+- manufacturer: Kopp
+  model: Kuara-25.0-2-T
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=37;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432525009'
+- manufacturer: Kopp
+  model: Kuara-3.0-1-S
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=3;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432503003'
+- manufacturer: Kopp
+  model: Kuara-5.0-2-S
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=5;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432505005'
+- manufacturer: Kopp
+  model: Kuara-6.0-2-T
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=9;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432506037'
+- manufacturer: Kopp
+  model: Kuara-8.0-2-T
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=12;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432508039'
+- manufacturer: Kopp
+  model: Kuara-8.0-3-S
+  com_profile: RTU:9600,N,1,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=FoxESS;PeekPower=8;EnableStorage=false;Ch[§Bat_P]=HR,31036,int16,1,0.0;Ch[§Bat_I]=HR,31035,int16,1,0.0;Ch[§Bat_U]=HR,31034,int16,1,0.0;
+  order_nr: '432508008'
+- manufacturer: Kopp
+  model: LED-Controller RGBW
+  device_type: RGBDimmer_1
+  config: RampTime_Secs=1;EnableWhite=true;WatchdogIntervalSec=0;
+  description: RGB Aktor
+  order_nr: '865001019'
+- manufacturer: Kopp
+  model: LED-Controller RGBW(Cloud)
+  device_type: RGBDimmer_1
+  config: RampTime_Secs=1;EnableWhite=true;WatchdogIntervalSec=0;
+  description: Lampe
+- manufacturer: Kopp
+  model: LadeStat.KC-C
+  device_type: ChargingStation
+  config: EBehaviour=Keba_P30
+  order_nr: '434003000'
+- manufacturer: Kopp
+  model: LadeStat.KC-C.RFID
+  device_type: ChargingStation
+  config: EBehaviour=Keba_P30
+  order_nr: '434003103'
+- manufacturer: Kopp
+  model: LadeStat.KC-C.RFID.ME
+  device_type: ChargingStation
+  config: EBehaviour=Keba_P30
+  order_nr: '434003127'
+- manufacturer: Kopp
+  model: LadeStat.KC-X.RFID.4G
+  device_type: ChargingStation
+  config: EBehaviour=Keba_P30
+  order_nr: '434003141'
+- manufacturer: Kopp
+  model: LadeStat.KC-X.RFID.4G.ME
+  device_type: ChargingStation
+  config: EBehaviour=Keba_P30
+  order_nr: '434003206'
+- manufacturer: Kopp
+  model: PIKO-12
+  device_type: PIKO
+  config: PeekPower=12
+- manufacturer: Kopp
+  model: PIKO-15
+  device_type: PIKO
+  config: PeekPower=15
+- manufacturer: Kopp
+  model: PIKO-17
+  device_type: PIKO
+  config: PeekPower=17
+- manufacturer: Kopp
+  model: PIKO-20
+  device_type: PIKO
+  config: PeekPower=20
+- manufacturer: Kopp
+  model: PLENTIC.plus-10.0
+  com_profile: TCP:1502,71,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Kostal_Plenticore;PeekPower=10;EnableStorage=true;Ch[§PLim_EVU]=HR,122,float32sw,1,0;
+- manufacturer: Kopp
+  model: PLENTIC.plus-7.0
+  com_profile: TCP:1502,71,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Kostal_Plenticore;PeekPower=7;EnableStorage=true;Ch[§PLim_EVU]=HR,122,float32sw,1,0;
+- manufacturer: Kopp
+  model: PLENTIC.plus-8.5
+  com_profile: TCP:1502,71,5000;
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=Kostal_Plenticore;PeekPower=8.5;EnableStorage=true;Ch[§PLim_EVU]=HR,122,float32sw,1,0;
+- manufacturer: Kopp
+  model: RTS power
+  device_type: PhotovoltaicInverter
+  config: EBehaviour=RTCpower;
+- manufacturer: Kopp
+  model: Rollladen und Jalousienschalter 4-Draht, 2-Kanal
+  device_type: Jalousie_1
+  config: CommandEEP=KoppBC;ReceiveEEP=KoppBC;SynchronizationMode=byActuator;PositionSpecificationMode=none;SlatsSpecificationMode=none;
+  order_nr: '864004011'
+- manufacturer: Kopp
+  model: Rollladen und Jalousienschalter 4-Draht, 2-Kanal(Cloud)
+  device_type: Jalousie_1
+  config: CommandEEP=MeshleCloud;ReceiveEEP=MeshleCloud;SynchronizationMode=byActuator;PositionSpecificationMode=none;SlatsSpecificationMode=none;
+  order_nr: '864004011'
+- manufacturer: Kopp
+  model: Schalter 2-Draht, 1-Kanal
+  device_type: Switch_1
+  description: UP-Schaltaktor
+  order_nr: '864002019'
+- manufacturer: Kopp
+  model: Schalter 2-Draht, 1-Kanal(Cloud)
+  device_type: Switch_1
+  description: Schaltaktor
+  order_nr: '864002019'
+- manufacturer: Kopp
+  model: Schalter 3-Draht, 1-Kanal
+  device_type: Switch_1
+  description: UP-Schaltaktor
+  order_nr: '864003010'
+- manufacturer: Kopp
+  model: Schalter 3-Draht, 1-Kanal(Cloud)
+  device_type: Switch_1
+  description: Schaltaktor
+  order_nr: '864003010'
+- manufacturer: Kopp
+  model: Schalter 4-Draht, 2-Kanal
+  device_type: Switch_2
+  description: UP-Schaltaktor
+  order_nr: '864004028'
+- manufacturer: Kopp
+  model: Schalter 4-Draht, 2-Kanal(Cloud)
+  device_type: Switch_2
+  description: Schaltaktor
+  order_nr: '864004028'
+- manufacturer: Kopp
+  model: Schalter 5-Draht, 1-Kanal
+  device_type: Switch_1
+  description: UP-Schaltaktor
+  order_nr: '864005012'
+- manufacturer: Kopp
+  model: Schalter 5-Draht, 1-Kanal Ladestation
+  device_type: Switch_1
+  description: UP-Schaltaktor
+  order_nr: '864005015'
+- manufacturer: Kopp
+  model: Schalter 5-Draht, 1-Kanal(Cloud)
+  device_type: Switch_1
+  description: Schaltaktor
+  order_nr: '864005012'
+- manufacturer: Kopp
+  model: Universal-Dimmer 2-Draht, 1-Kanal
+  device_type: Dimmer_1
+  config: CommandEEP=KoppBC;
+  description: UP-Dimmaktor
+  order_nr: '864203016'
+- manufacturer: Kopp
+  model: Universal-Dimmer(Cloud)
+  device_type: Dimmer_1
+  config: CommandEEP=MeshleCloud;
+  description: UP-Dimmaktor
+  order_nr: '864203016'
+- manufacturer: Kopp
+  model: Universalsender
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Universaltaster
+  order_nr: '862500010'
+- manufacturer: Kopp
+  model: WCDimmer
+  device_type: WCDimmer_1
+  config: RampTime_Secs=1;EnableWhite=true;WatchdogIntervalSec=30;MinColorTemperature=2200; MaxColorTemperature=7000;
+  description: Lampe
+- manufacturer: Kopp
+  model: WCDimmer(Cloud)
+  device_type: WCDimmer_1
+  config: RampTime_Secs=1;EnableWhite=true;WatchdogIntervalSec=30;MinColorTemperature=2200; MaxColorTemperature=7000;
+  description: Lampe
+- manufacturer: Kopp
+  model: Zwischenstecker
+  device_type: Switch_1
+  description: Zwischenstecker
+  order_nr: '864402011'
+- manufacturer: Leviton
+  model: WSCxx-I0W
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy;WatchdogIntervalSec = 90
+  description: Präsenz
+- manufacturer: Maco
+  model: mTRONIC Mulisensor
+  com_profile: A5-14-0A
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_A5140A_MultifuncSensorWindowDoorBreakSensor
+  description: Fenstergriff Messing
+- manufacturer: Nodon
+  model: F8S12
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule_8
+  config: NrOfButtons=2;
+  description: Handsender
+- manufacturer: Nodon
+  model: MSP-2-1-01
+  com_profile: D2-01-XX
+  device_type: Switch_1
+  config: CommandEEP=EEP_D201XX_VLD;ReceiveEEP=EEP_D201XX_VLD;IODevice/SupportsReMan=false;measuresPower=true;
+  description: Schaltaktor
+- manufacturer: Nodon
+  model: MSP-2-1-11
+  com_profile: D2-01-XX
+  device_type: Switch_1
+  config: CommandEEP=EEP_D201XX_VLD;ReceiveEEP=EEP_D201XX_VLD;IODevice/SupportsReMan=false;measuresPower=true;
+  description: Schaltaktor
+- manufacturer: Nodon
+  model: PIR 2-1-0x
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=EEPA50703_OccupancyLight;WatchdogIntervalSec=2700
+  description: Präsenz
+- manufacturer: Nodon
+  model: SIN-2-2-00
+  com_profile: D2-01-XX
+  device_type: Switch_2
+  config: CommandEEP=EEP_D201XX_VLD;ReceiveEEP=EEP_D201XX_VLD;IODevice/SupportsReMan=false;
+  description: Schaltaktor
+- manufacturer: Nodon
+  model: SIN-2-RS-01
+  com_profile: D5-05-02
+  device_type: Jalousie_1
+  config: CommandEEP=EEP_D20502_VLD;ReceiveEEP=EEP_D20502_VLD;SynchronizationMode=byActuator
+  description: UP-Jalousieaktor
+- manufacturer: Nodon
+  model: STP-2-1
+  com_profile: A5-02-05
+  device_type: Temperature
+  config: Range=RANGE_0_40_C
+  description: Temperaturfühler
+- manufacturer: Nodon
+  model: STPH-2-1
+  com_profile: A5-04-01
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50401
+  description: Temperatur/Feuchtefühler
+- manufacturer: Omnio
+  model: AP230/01
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy
+  description: Präsenz
+- manufacturer: Omnio
+  model: ATF101
+  com_profile: A5-02-14
+  device_type: Temperature
+  config: Range=RANGE_m20_60_C
+  description: Aussentemperaturfühler
+- manufacturer: Omnio
+  model: KEY101
+  device_type: KeyCardSwitch
+  config: KeyCardSwitchType=uncoded
+  description: Funkschalter für Zugangskarten
+- manufacturer: Omnio
+  model: KSM-CH-110
+  device_type: KeyCardSwitch
+  config: KeyCardSwitchType=uncoded
+  description: Funkschalter für Zugangskarten
+- manufacturer: Omnio
+  model: KXJ230/12
+  com_profile: D5-05-02
+  device_type: Jalousie_1
+  config: CommandEEP=EEP_D20502_VLD;ReceiveEEP=EEP_D20502_VLD
+  description: UP-Jalousieaktor
+- manufacturer: Omnio
+  model: LS101
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=EEPA50601_RANGE_300_30000_LUX
+  description: Aussenhelligkeitssensor
+- manufacturer: Omnio
+  model: PM101
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=OmnioEagle;
+  description: Präsenz
+- manufacturer: Omnio
+  model: R101
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Handsender
+- manufacturer: Omnio
+  model: R101
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Handsender
+- manufacturer: Omnio
+  model: REGJ24/01
+  com_profile: F6-02-01
+  device_type: Jalousie_4
+  config: CommandEEP=EEP_F60201_RockerSwitch;PressDurationForDriveToEnd=550;ReceiveEEP=none
+  description: REG-Jalousieaktor
+- manufacturer: Omnio
+  model: REGS24/01
+  com_profile: F6-02-01
+  device_type: Switch_4
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: REG-Schaltaktor
+- manufacturer: Omnio
+  model: REGS24/01
+  com_profile: F6-02-01
+  device_type: Switch_4
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: REG-Schaltaktor
+- manufacturer: Omnio
+  model: REGS24/02
+  com_profile: A5-10-03
+  device_type: Valve_8
+  config: SetpointOffsetMin=-5;SetpointOffsetMax=5;BaseTemp=20.8;
+  description: REG-Schaltaktor
+- manufacturer: Omnio
+  model: REGS24/02
+  com_profile: F6-02-01
+  device_type: Switch_8
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: REG-Schaltaktor
+- manufacturer: Omnio
+  model: REGS24/02
+  com_profile: F6-02-01
+  device_type: Switch_8
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: REG-Schaltaktor
+- manufacturer: Omnio
+  model: RTF101
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: Omnio
+  model: RTF102
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert
+- manufacturer: Omnio
+  model: RTF103
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Mode;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Betriebsart (Omnio RTF103)
+- manufacturer: Omnio
+  model: TST230/01 Counter
+  device_type: Counter_2
+  description: Tasterschnittstelle mit Firmware 'Zähler'
+- manufacturer: Omnio
+  model: UPD230/01
+  device_type: Dimmer_1
+  config: CommandEEP=OmnioUPD_STM;ObsOnRampTimeMS=3000;ObserverOffRampTime_Msecs=3000;LongBtnPressTimeMS=1200;DimUpAtOffCmd=true
+  description: §250W
+- manufacturer: Omnio
+  model: UPJ230/01
+  com_profile: F6-02-01
+  device_type: Jalousie_1
+  config: CommandEEP=EEP_F60201_RockerSwitch;ReceiveEEP=none
+  description: UP-Jalousieaktor
+- manufacturer: Omnio
+  model: UPJ230/12
+  device_type: Jalousie_1
+  config: CommandEEP=EEP_OmnioJal12;ReceiveEEP=none
+  description: UP-Jalousieaktor
+- manufacturer: Omnio
+  model: UPS230/03
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: UP-Lastaktor §13A
+- manufacturer: Omnio
+  model: UPT230/1
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=-5;SetpointOffsetMax=5;BaseTemp=20.8;
+  description: UP-Thermostataktor 1-Kanal 13A
+- manufacturer: Omnio
+  model: WS-CH-101
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+  description: Wandsender 2 Kanal
+- manufacturer: Omnio
+  model: WS-CH-101
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+  description: Wandsender 2 Kanal
+- manufacturer: Omnio
+  model: WS-CH-102
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Wandsender 4 Kanal
+- manufacturer: Omnio
+  model: WS-CH-102
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Wandsender 4 Kanal
+- manufacturer: Omnio
+  model: WS-D-101
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+  description: Wandsender 2 Kanal
+- manufacturer: Omnio
+  model: WS-D-102
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Wandsender 4 Kanal
+- manufacturer: Omnio
+  model: WS-D-102
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Wandsender 4 Kanal
+- manufacturer: PEHA
+  model: $tBewegungsmelder
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy;Ranges=BinaryInput
+- manufacturer: PEHA
+  model: $tDimmer
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;OnRampTime_Secs=3;OffRampTime_Secs=3;ObsOnRampTimeMS=1400;ObsOffRampTimeMS=1800;LongBtnPressTimeMS=1000
+- manufacturer: PEHA
+  model: $tFensterkontakt
+  device_type: WindowContact
+- manufacturer: PEHA
+  model: $tJalousie / Rollade
+  device_type: Jalousie_1
+  config: EnableShadowing=false
+- manufacturer: PEHA
+  model: $tLesen analog
+  device_type: ReadAnalog
+- manufacturer: PEHA
+  model: $tLesen binär
+  device_type: ReadBin
+- manufacturer: PEHA
+  model: $tRaumfühler
+  device_type: RoomTemperatureControl
+  config: SensorType=PEHA_PHC;PerformTemperatureSetpointCurve=False;
+- manufacturer: PEHA
+  model: $tSchaltobjekt
+  device_type: Switch_1
+  config: IndicationOnly=false;
+- manufacturer: PEHA
+  model: $tSchaltzustand
+  device_type: Switch_1
+  config: IndicationOnly=true;
+- manufacturer: PEHA
+  model: $tSchreiben binär
+  device_type: WriteBin
+- manufacturer: PEHA
+  model: $tTemperatur
+  device_type: Temperature
+  config: Range=GENERIC
+  description: Temperaturfühler
+- manufacturer: PEHA
+  model: 450 .xx FU-RTR
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: PEHA
+  model: 450 .xx FU-RTR MS
+  com_profile: A5-10-06
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Slider;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Schieber
+- manufacturer: PEHA
+  model: 450 FU FK
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: PEHA
+  model: 450 FU-BLS HC
+  device_type: KeyCardSwitch
+  config: KeyCardSwitchType=uncoded
+  description: Funkschalter für Zugangskarten
+- manufacturer: PEHA
+  model: 450 FU-BLS xxx
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+  description: Wandsender 2 Kanal
+- manufacturer: PEHA
+  model: 450 FU-HS 4
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Handsender 4 Kanal
+- manufacturer: PEHA
+  model: 450 FUS-S2 USB
+  device_type: PTMSwitchModule
+  description: USB gesteuerter Sender
+- manufacturer: PEHA
+  model: 451 FU-BEBI
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=EEP_A51104;measuresPower=true;
+  description: Schaltaktor
+- manufacturer: PEHA
+  model: 451 FU-BEBIM
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=EEP_A51104;measuresPower=true;
+  description: Schaltaktor
+- manufacturer: PEHA
+  model: 451 FU-BEP
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: PEHA
+  model: 451 FU-BEP DAB
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;OnRampTime_Secs=3;OffRampTime_Secs=3;ObsOnRampTimeMS=1400;ObsOffRampTimeMS=1800;LongBtnPressTimeMS=1000;DimUpAtOffCmd=false
+  description: §210W
+- manufacturer: PEHA
+  model: 451 FU-E RTR o.T.
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=-5;SetpointOffsetMax=5;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=1;ProvidesEnergySaving=true;BaseTemp=21;BaseTempIsConfigurable=true;
+  description: Schaltaktor mit Thermostatfunktion Heizen Ein/Aus
+- manufacturer: PEHA
+  model: 451 FU-E o.T.
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: PEHA
+  model: 451 FU-EBIM o.T.
+  com_profile: A5-38-08(01)
+  device_type: Switch_1
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=EEP_A51104;measuresPower=true;
+  description: UP-Schaltaktor
+- manufacturer: PEHA
+  model: 451 FU-EP PF o.T.
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: PEHA
+  model: 451 FU-EP o.T.
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: UP-Schaltaktor
+- manufacturer: PEHA
+  model: 451-DM UN 2REG
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;ReceiveEEP=EEP_A51101;OnRampTime_Secs=3;OffRampTime_Secs=3;ObsOnRampTimeMS=4000;ObsOffRampTimeMS=4000;LongBtnPressTimeMS=1000;DimUpAtOffCmd=false;RebootBehaviour=leave
+  description: §200VA
+- manufacturer: PEHA
+  model: 4511 FU-EP DAB ST
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;OnRampTime_Secs=3;OffRampTime_Secs=3;ObsOnRampTimeMS=1400;ObsOffRampTimeMS=1800;LongBtnPressTimeMS=1000;DimUpAtOffCmd=false
+  description: Steckdosendimmer
+- manufacturer: PEHA
+  model: 4511 FU-EP ST
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: PEHA
+  model: 452 FU 2REG 16A
+  com_profile: A5-38-08(01)
+  device_type: Switch_2
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=EEP_A51101;RebootBehaviour=leave
+  description: REG-Schaltaktor
+- manufacturer: PEHA
+  model: 452 FU-E
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: PEHA
+  model: 452 FU-EBI JR o.T
+  com_profile: A5-38-08(07)
+  device_type: Jalousie_1
+  config: CommandEEP=EEP_A53808_0x07_BlindControl;ReceiveEEP=EEP_A51103_BlindStatus
+  description: UP-Jalousieaktor
+- manufacturer: PEHA
+  model: 452 FU-EP JR
+  com_profile: F6-02-01
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=1000;CommandEEP=EEP_F60201_RockerSwitch;ReceiveEEP=none
+  description: UP-Jalousieaktor
+- manufacturer: PEHA
+  model: 452 FU-EP o.T.
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: UP-Schaltaktor
+- manufacturer: PEHA
+  model: 452/24 FU-EP MF o.T.
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: PEHA
+  model: 454 FU 2REG
+  com_profile: A5-38-08(01)
+  device_type: Switch_4
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=EEP_A51101;RebootBehaviour=leave
+  description: REG-Schaltaktor
+- manufacturer: PEHA
+  model: 454 FU-E DE
+  com_profile: F6-02-01
+  device_type: Switch_4
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;ShowInvertOption=true;
+- manufacturer: PEHA
+  model: 454 FU-E REG
+  com_profile: F6-02-01
+  device_type: Switch_4
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: REG-Schaltaktor
+- manufacturer: PEHA
+  model: 454 FU-JR 2REG
+  com_profile: A5-38-08(07)
+  device_type: Jalousie_2
+  config: CommandEEP=EEP_A53808_0x07_BlindControl;ReceiveEEP=EEP_A51103_BlindStatus
+  description: REG-Jalousieaktor
+- manufacturer: PEHA
+  model: 454 FU-SPV 4REG
+  com_profile: A5-38-08(01)
+  device_type: Switch_4
+  config: CommandEEP=EEP_A53808_01_CentralCommand_Switching;ReceiveEEP=EEP_A51101;RebootBehaviour=leave
+  description: REG-Schaltaktor
+- manufacturer: PEHA
+  model: 455 FU-BLS xxx
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Wandsender 4 Kanal
+- manufacturer: PEHA
+  model: 455 FU-S BM
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy;Ranges=Funkstuhltechnik_BWM_FUS2;WatchdogIntervalSec=0
+  description: Mobiler Funk-Bewegungsmelder
+- manufacturer: PEHA
+  model: 4571 FU-EP DAB ST
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;OnRampTime_Secs=3;OffRampTime_Secs=3;ObsOnRampTimeMS=1400;ObsOffRampTimeMS=1800;LongBtnPressTimeMS=1000;DimUpAtOffCmd=false
+  description: Steckdosendimmer
+- manufacturer: PEHA
+  model: 4571 FU-EP ST
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: PEHA
+  model: 481 FU-E
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: PEHA
+  model: 482 FU-E
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: PEHA
+  model: 950 JRM/940 FU-C
+  com_profile: F6-02-01
+  device_type: Jalousie_12
+  config: CommandEEP=EEP_F60201_RockerSwitch;ReceiveEEP=none
+  description: REG-Jalousieaktor
+- manufacturer: PEHA
+  model: D 451 FU-BM
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy
+  description: Bewegungsmelder
+- manufacturer: PEHA
+  model: D 451 FU-BM DE
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy
+  description: Bewegungsmelder
+- manufacturer: PEHA
+  model: D K55400 xxx
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+  description: Aussen-Wandsender 2 Kanal
+- manufacturer: PEHA
+  model: D K55406 xxx
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Aussen-Wandsender 4 Kanal
+- manufacturer: PEHA
+  model: SENSOLUX PM
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=ThermokonSR_MDS
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: PEHA
+  model: SG-FUS-24-230
+  device_type: FSVoltageSensor
+  description: Spannungssensor
+- manufacturer: Permundo
+  model: PSC132
+  com_profile: D2-01-XX
+  device_type: Switch_1
+  config: CommandEEP=EEP_D201XX_VLD;ReceiveEEP=EEP_D201XX_VLD;measuresPower=true;
+  description: Schaltaktor
+- manufacturer: Permundo
+  model: PSC152
+  com_profile: A5-38-08(07)
+  device_type: Jalousie_1
+  config: CommandEEP=EEP_A53808_0x07_BlindControl;ReceiveEEP=EEP_051103_BlindStatus
+  description: UP-Jalousieaktor
+- manufacturer: Permundo
+  model: PSC234
+  com_profile: D2-01-XX
+  device_type: Switch_1
+  config: CommandEEP=EEP_D201XX_VLD;ReceiveEEP=EEP_D201XX_VLD;measuresPower=true;
+  description: Schaltaktor
+- manufacturer: Pressac
+  model: CO2, Temp & Humidity
+  com_profile: A5-09-04
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_CO2;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Feuchte,CO2
+- manufacturer: Pressac
+  model: CTV3
+  com_profile: D2-32-XX
+  device_type: EnergyMeter_3
+  config: NoTariff=true;ReceiveEEP=EEP_D232XX_ACCurrentClamp
+  description: Zähler
+- manufacturer: S+S
+  model: FK1-FSE
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: S+S
+  model: HT4-FSE
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Handsender 4 Kanal
+- manufacturer: S+S
+  model: KS1-FSE
+  device_type: KeyCardSwitch
+  config: KeyCardSwitchType=uncoded
+  description: Funkschalter für Zugangskarten
+- manufacturer: S+S
+  model: RFTF-2-FSE
+  com_profile: A5-10-14
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Feuchte,Präsenztaste
+- manufacturer: S+S
+  model: RFTF-2-FSE-P
+  com_profile: A5-10-12
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Feuchte
+- manufacturer: S+S
+  model: RFTF-2-FSE-PD
+  device_type: RoomTemperatureControl
+- manufacturer: S+S
+  model: RFTF-2-FSE-PT
+  com_profile: A5-10-10
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint_Occupancy;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Feuchte,Präsenztaste
+- manufacturer: S+S
+  model: RTF-2-FSE
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: S+S
+  model: RTF-2-FSE-P
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert
+- manufacturer: S+S
+  model: RTF-2-FSE-PD
+  com_profile: A5-10-04
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Fan;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Stufenschalter
+- manufacturer: S+S
+  model: RTF-2-FSE-PDT
+  com_profile: A5-10-01
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Fan_Occupancy;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Stufenschalter,Präsenztaste
+- manufacturer: S+S
+  model: RTF-2-FSE-PT
+  com_profile: A5-10-05
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Occupancy;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert
+- manufacturer: S+S
+  model: WT-FSE
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Wandsender
+- manufacturer: Sauter
+  model: EY-RU110...146
+  com_profile: A5-10-02
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Fan_Slider;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Stufenschalter,Präsenztaste
+- manufacturer: Schlegel/DUX
+  model: DFA16
+  device_type: DUXButtons
+  config: Buttons=ButtonMomentary
+  description: 1 Kanal
+- manufacturer: Schlegel/DUX
+  model: DFA22
+  device_type: DUXButtons
+  config: Buttons=ButtonMomentary
+  description: 1 Kanal
+- manufacturer: Schlegel/DUX
+  model: DMF_A
+  device_type: DUXButtons
+  config: Buttons=ButtonMomentary
+  description: 1 Kanal
+- manufacturer: Schlegel/DUX
+  model: DMF_B
+  device_type: DUXButtons
+  config: Buttons=DoubleButtonMomentary
+  description: 2 Kanal
+- manufacturer: Schlegel/DUX
+  model: EK-FA-KST
+  device_type: DUXButtons
+  config: Buttons=ButtonMomentary
+  description: Endschalter
+- manufacturer: Servodan
+  model: 43-161
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=EEPA50601_RANGE_300_30000_LUX
+  description: Aussenhelligkeitsfühler
+- manufacturer: Servodan
+  model: 70-100
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: Schaltaktor
+- manufacturer: Servodan
+  model: 76-922
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+  description: Wandsender
+- manufacturer: Servodan
+  model: 76-923
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=2
+  description: Wandsender
+- manufacturer: Servodan
+  model: PIR 360 41-301
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy
+  description: Bewegungsmelder
+- manufacturer: Servodan
+  model: PIR 360 41-380
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy
+  description: Bewegungsmelder
+- manufacturer: Spartan
+  model: ME8330
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=5;SetpointOffsetMax=30;BaseTemp=0;
+  description: UP-Thermostataktor proportional
+- manufacturer: Spartan
+  model: ME8380
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=5;SetpointOffsetMax=30;BaseTemp=0;
+  description: UP-Thermostataktor proportional
+- manufacturer: TRIO2SYS
+  model: 10020033.xx
+  com_profile: A5-02-05
+  device_type: Temperature
+  config: Range=RANGE_0_40_C
+  description: Temperaturfühler
+- manufacturer: TRIO2SYS
+  model: 10020033.xx
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: Temperaturfühler
+- manufacturer: TRIO2SYS
+  model: 10020041.xx
+  com_profile: A5-04-01
+  device_type: TemperatureHumidity
+  config: ReceiveEEP=EEP_A50401
+  description: Temperatur/Feuchtefühler
+- manufacturer: TRIO2SYS
+  model: 10020041.xx
+  com_profile: A5-10-14
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity;SetpointMinTemp=15;SetpointMaxTemp=25;
+- manufacturer: Thermokon
+  model: SAB02
+  com_profile: A5-20-01
+  device_type: Valve_1
+  config: BaseTemp=20;ActorType=EEP_A52001_HeatingValveBIDI
+  description: Stellventilaktor proportional
+- manufacturer: Thermokon
+  model: SAB05
+  com_profile: A5-20-01
+  device_type: Valve_1
+  config: BaseTemp=20;ActorType=EEP_A52001_HeatingValveBIDI
+  description: Stellventilaktor proportional
+- manufacturer: Thermokon
+  model: SR-KCS
+  device_type: KeyCardSwitch
+  config: KeyCardSwitchType=uncoded
+  description: Funkschalter für Zugangskarten
+- manufacturer: Thermokon
+  model: SR-MDS 230V
+  com_profile: A5-08-XX
+  device_type: PIR
+  config: SensorType=EEPA508XX_OccupancyLightTemperature
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Thermokon
+  model: SR-MDS 24V
+  com_profile: A5-08-XX
+  device_type: PIR
+  config: SensorType=EEPA508XX_OccupancyLightTemperature
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Thermokon
+  model: SR-MDS BAT
+  com_profile: A5-08-XX
+  device_type: PIR
+  config: SensorType=EEPA508XX_OccupancyLightTemperature
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Thermokon
+  model: SR-MDS Solar
+  com_profile: A5-07-03
+  device_type: PIR
+  config: SensorType=OccupancyLight;Ranges=ThermokonSR_MDS
+  description: Bewegungs- und Helligkeitssensor
+- manufacturer: Thermokon
+  model: SR-MI-HS
+  device_type: Meter
+  config: NrOfChannels=3;ChannelNrOffset=1;SendsCumulativeValuesOnly=true;WatchdogIntervalSec=1100
+  description: Zähler
+- manufacturer: Thermokon
+  model: SR-PIR 360°
+  com_profile: A5-07-01
+  device_type: PIR
+  config: SensorType=EEPA50701_Occupancy
+  description: Präsenz
+- manufacturer: Thermokon
+  model: SR04
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: Thermokon
+  model: SR04 CO2
+  com_profile: A5-09-04
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_CO2;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,CO2
+- manufacturer: Thermokon
+  model: SR04 CO2 rH
+  com_profile: A5-09-04
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_CO2;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Feuchte,CO2
+- manufacturer: Thermokon
+  model: SR04 rH
+  com_profile: A5-10-14
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Feuchte
+  order_nr: 2'161
+- manufacturer: Thermokon
+  model: SR04P
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert
+- manufacturer: Thermokon
+  model: SR04P MS
+  com_profile: A5-10-06
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Slider;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Schieber
+  order_nr: 2'159
+- manufacturer: Thermokon
+  model: SR04P MS rH
+  com_profile: A5-10-11
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint_Slider;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Feuchte,Schieber
+  order_nr: 2'164
+- manufacturer: Thermokon
+  model: SR04P T rH
+  com_profile: A5-10-10
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint_Occupancy;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Feuchte,Präsenztaste
+  order_nr: 2'163
+- manufacturer: Thermokon
+  model: SR04P Weberhaus
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;PhysicalTempSetpointScaling=2.6; PerformTemperatureSetpointCurve=false;TempSetpointEditable=true;
+  description: akt.Temp,Sollwert
+- manufacturer: Thermokon
+  model: SR04P rH
+  com_profile: A5-10-12
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Feuchte
+  order_nr: 2'162
+- manufacturer: Thermokon
+  model: SR04PST
+  com_profile: A5-10-01
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Fan_Occupancy;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Stufenschalter,Präsenztaste
+  order_nr: 2'160
+- manufacturer: Thermokon
+  model: SR06
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: Thermokon
+  model: SR06 LCD 2T
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert
+- manufacturer: Thermokon
+  model: SR07
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: Thermokon
+  model: SR07
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: aktuelle Temperatur
+- manufacturer: Thermokon
+  model: SR07 MS
+  com_profile: A5-10-06
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Slider;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Schieber
+- manufacturer: Thermokon
+  model: SR07 P
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert
+  order_nr: 2'165
+- manufacturer: Thermokon
+  model: SR07 PMS
+  com_profile: A5-10-06
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Slider;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Schieber
+- manufacturer: Thermokon
+  model: SR07 PT
+  com_profile: A5-10-05
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Occupancy;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Feuchte,CO2
+- manufacturer: Thermokon
+  model: SR07 T
+  com_profile: A5-10-05
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Occupancy;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,CO2
+- manufacturer: Thermokon
+  model: SR07 rH MS
+  com_profile: A5-10-11
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint_Slider;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Stufenschalter,Präsenztaste
+- manufacturer: Thermokon
+  model: SR07 rH P
+  com_profile: A5-10-12
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Feuchte
+- manufacturer: Thermokon
+  model: SR07 rH PMS
+  com_profile: A5-10-11
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint_Slider;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Feuchte,Schieber
+- manufacturer: Thermokon
+  model: SR07 rH PT
+  com_profile: A5-10-10
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint_Occupancy;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Feuchte,Präsenztaste
+- manufacturer: Thermokon
+  model: SR07 rH T
+  com_profile: A5-10-10
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Humidity_Setpoint_Occupancy;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert,Präsenztaste
+- manufacturer: Thermokon
+  model: SR65
+  com_profile: A5-02-14
+  device_type: Temperature
+  config: Range=RANGE_m20_60_C
+  description: Aussentemperaturfühler
+- manufacturer: Thermokon
+  model: SR65
+  com_profile: A5-02-14
+  device_type: Temperature
+  config: Range=RANGE_m20_60_C
+  description: Aussentemperaturfühler
+- manufacturer: Thermokon
+  model: SR65 AKF
+  com_profile: A5-02-17
+  device_type: Temperature
+  config: Range=RANGE_10_90_C
+  description: Luftkanaltemperaturfühler
+- manufacturer: Thermokon
+  model: SR65 AKF
+  com_profile: A5-02-17
+  device_type: Temperature
+  config: Range=RANGE_10_90_C
+  description: Luftkanaltemperaturfühler
+- manufacturer: Thermokon
+  model: SR65 DI
+  device_type: Digital Input
+  description: Digital Eingangsmodul
+- manufacturer: Thermokon
+  model: SR65 LI
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=EEPA50601_RANGE_300_30000_LUX
+  description: Aussenhelligkeitsfühler
+- manufacturer: Thermokon
+  model: SR65 LI
+  com_profile: A5-06-01
+  device_type: Brightness
+  config: BrightnessRange=EEPA50601_RANGE_300_30000_LUX
+  description: Aussenhelligkeitsfühler
+- manufacturer: Thermokon
+  model: SR65 TF
+  com_profile: A5-02-14
+  device_type: Temperature
+  config: Range=RANGE_m20_60_C
+  description: Kabeltemperaturfühler
+- manufacturer: Thermokon
+  model: SR65 VFG
+  com_profile: A5-02-17
+  device_type: Temperature
+  config: Range=RANGE_10_90_C
+  description: Anlegetemperaturfühler
+- manufacturer: Thermokon
+  model: SR65-3AI
+  device_type: STM100
+- manufacturer: Thermokon
+  model: SRC-ADO BCS
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=-5;SetpointOffsetMax=5;ProvidesTempLoweringModeConfigurable=true;ProvidesTempLoweringMode=0;ProvidesEnergySaving=true;ActualTempRangeEditable=true;BaseTempIsConfigurable=true;BaseTemp=20;
+  description: 4-fach Empfänger mit analogen Ausgängen
+- manufacturer: Thermokon
+  model: SRC-ADO BCS
+  com_profile: F6-02-01
+  device_type: Jalousie_1
+  config: PressDurationForDriveToEnd=500;CommandEEP=EEP_F60201_RockerSwitch;ReceiveEEP=none
+  description: UP-Jalousieaktor
+- manufacturer: Thermokon
+  model: SRC-ADO BCS
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;OnRampTime_Secs=0;OffRampTime_Secs=0;ObsOnRampTimeMS=2000;ObsOffRampTimeMS=2000;LongBtnPressTimeMS=1000;ObsOverwrite=true;DimUpAtOffCmd=true
+  description: UP-Dimmaktor
+- manufacturer: Thermokon
+  model: SRC-ADO BCS
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: REG-Schaltaktor
+- manufacturer: Thermokon
+  model: SRC-AO DimmV
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;ObsOnRampTimeMS=3000;ObserverOffRampTime_Msecs=3000;LongBtnPressTimeMS=400;DimUpAtOffCmd=true
+  description: UP-Dimmaktor
+- manufacturer: Thermokon
+  model: SRC-AO DimmVV
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_2
+  config: CommandEEP=EEP_A53808_02_CentralCommand_Dimming;ObsOnRampTimeMS=3000;ObserverOffRampTime_Msecs=3000;LongBtnPressTimeMS=400;DimUpAtOffCmd=true
+  description: UP-Dimmaktor
+- manufacturer: Thermokon
+  model: SRC-AO Multi V
+  device_type: WriteAnalog
+- manufacturer: Thermokon
+  model: SRC-AO Multi V
+  device_type: WriteAnalog
+- manufacturer: Thermokon
+  model: SRC-DO Typ1 PWM
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=-5;SetpointOffsetMax=5;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=1;ProvidesEnergySaving=true;BaseTemp=21;BaseTempIsConfigurable=true;
+  description: Schaltaktor mit Thermostatfunktion PWM
+  csv_import: skip   # reiner Aktor, sendet keine Status-Telegramme
+- manufacturer: Thermokon
+  model: SRC-DO Typ4
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=-5;SetpointOffsetMax=5;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=1;ProvidesEnergySaving=true;BaseTemp=21;BaseTempIsConfigurable=true;
+  description: Schaltaktor mit Thermostatfunktion Heizen Ein/Aus
+  csv_import: skip
+- manufacturer: Thermokon
+  model: SRC-DO Typ5
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=-5;SetpointOffsetMax=5;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=1;ProvidesEnergySaving=true;BaseTemp=20;
+  description: Thermostat-Aktor für EnOcean Funkstuhl
+  csv_import: skip
+- manufacturer: Thermokon
+  model: SRC-DO2 Typ1
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=-5;SetpointOffsetMax=5;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=1;ProvidesEnergySaving=true;BaseTemp=21;BaseTempIsConfigurable=true;
+  description: Schaltaktor mit Thermostatfunktion Heizen/Kühlen
+  csv_import: skip
+- manufacturer: Thermokon
+  model: SRC-DO8
+  com_profile: A5-10-06
+  device_type: Valve_8
+  config: SetpointOffsetMin=-10;SetpointOffsetMax=10;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=1;ProvidesEnergySaving=true;BaseTemp=21;BaseTempIsConfigurable=true;
+  description: 8-Kanal Heizregler (RX-only) — Sollwert/Temp/Tag-Nacht per A5-10-06
+  actuator_tx: true
+# STC-DO8 Typ1/Typ2: 8-Kanal-Heizregler (RX-only, kein Status). Wir senden
+# pro Kanal A5-10-06 (Ist-Temp + Sollwertverschiebung + Tag/Nacht). actuator_tx
+# laesst den Scaffold 8 schlichte TX-Kanaele anlegen; die TX-Sender-IDs traegt
+# der User manuell ein (der GW wird mit diesen IDs frei).
+- manufacturer: Thermokon
+  model: STC-DO8 Typ1
+  com_profile: A5-10-06
+  device_type: Valve_8
+  config: SetpointOffsetMin=-10;SetpointOffsetMax=10;BaseTemp=21;BaseTempIsConfigurable=true;
+  description: 8-Kanal Heizregler (RX-only) — Sollwert/Temp/Tag-Nacht per A5-10-06
+  actuator_tx: true
+- manufacturer: Thermokon
+  model: STC-DO8 Typ2
+  com_profile: A5-10-06
+  device_type: Valve_8
+  config: SetpointOffsetMin=-10;SetpointOffsetMax=10;BaseTemp=21;BaseTempIsConfigurable=true;
+  description: 8-Kanal Heizregler (RX-only, +Individualsensor) — A5-10-06 senden
+  actuator_tx: true
+  description: "8-fach Funk-Empfänger\r\nmit 8 digitalen Ausgängen"
+- manufacturer: Thermokon
+  model: SRG01
+  com_profile: F6-10-00
+  device_type: WindowHandle
+  config: ReceiveEEP=EEP_F61000_WindowHandle
+  description: Fenstergriff Edelstahl
+- manufacturer: Thermokon
+  model: SRW01
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: Thermokon
+  model: STC-DO
+  com_profile: A5-10-03
+  device_type: Valve_1
+  config: SetpointOffsetMin=-3;SetpointOffsetMax=3;ProvidesTempLoweringModeConfigurable=false;ProvidesTempLoweringMode=1;ProvidesEnergySaving=true;BaseTemp=20;BaseTempIsConfigurable=true;
+  description: Schaltaktor mit Thermostatfunktion Heizen/Kühlen
+- manufacturer: Thermokon
+  model: STC-DO
+  device_type: TempControllerUnit_1
+  config: ResponseMissingBehaviour=resendLastCommand;
+  description: Schaltaktor mit Thermostatfunktion Heizen/Kühlen
+- manufacturer: Thermokon
+  model: STC-DO8
+  com_profile: F6-02-01, A5-11-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=EEP_A51101;RebootBehaviour=leave;ResponseMissingBehaviour=resendLastCommand
+  description: REG-Schaltaktor
+- manufacturer: Thermokon
+  model: STC-DO8 type2
+  device_type: TempControllerUnit_1
+  config: ResponseMissingBehaviour=resendLastCommand;
+- manufacturer: Thermokon
+  model: STC-DO8 type2
+  device_type: TempControllerUnit_1
+  config: ResponseMissingBehaviour=resendLastCommand;
+- manufacturer: Thermokon
+  model: STC-Ethernet Easy Sens
+  device_type: Gateway
+- manufacturer: Thermokon
+  model: Thanos
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: Thermokon
+  model: Thanos
+  device_type: RoomTemperatureControl
+  config: SetpointMinTemp=15;SetpointMaxTemp=25;ShowThanosTypes=True;
+  description: akt.Temp,Sollwert
+- manufacturer: Thermokon
+  model: Thanos
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+  description: Sensortasten
+- manufacturer: Thermokon
+  model: Thanos LQ SR
+  com_profile: A5-10-02
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint_Fan_Presence;SetpointMinTemp=15;SetpointMaxTemp=25;FanStages=3;
+  description: Raumbedienteil Temp/Sollwert/Lüfter/Präsenz + 8 Touch-Tasten (4 Wippen)
+  bundled_ptm_count: 4
+  bundled_ptm_eep: F6-02-01
+  teach_in_procedure: >-
+    LQ SR sendet aus einem ID-Block mehrere Sender-IDs (Sensor + je Wippe eine).
+    Sender-IDs nicht raten — im Anlern-Modus jede Wippe drücken und das
+    Sensor-Telegramm abwarten, dann die echten IDs in die Channels eintragen.
+- manufacturer: Unotech
+  model: Rx1/IP65
+  com_profile: F6-02-01
+  device_type: Switch_1
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: IP65
+- manufacturer: Unotech
+  model: Rx16 DIN NPN
+  com_profile: F6-02-01
+  device_type: Switch_16
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: REG-Schaltaktor
+- manufacturer: Unotech
+  model: Rx2 DIN RELAY
+  com_profile: F6-02-01
+  device_type: Switch_2
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: REG-Schaltaktor
+- manufacturer: Unotech
+  model: Rx4 DIN RELAY
+  com_profile: F6-02-01
+  device_type: Switch_4
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: REG-Schaltaktor
+- manufacturer: Unotech
+  model: Rx8 DIN RELAY
+  com_profile: F6-02-01
+  device_type: Switch_8
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;
+  description: REG-Schaltaktor
+- manufacturer: Unotech
+  model: Rxe DALI
+  com_profile: A5-38-08(02)
+  device_type: Dimmer_1
+  config: CommandEEP=Eltako_pseudoCentralCommand_Dimming;ObsOnRampTimeMS=3000;ObsOffRampTimeMS=3000;LongBtnPressTimeMS=600;DimUpAtOffCmd=true;
+  description: Dimmer §DALI
+- manufacturer: Velux
+  model: KLF100
+  device_type: KLFXX
+  config: PressDurationForDriveToEnd=500;AdjustDownTime=0;
+  description: Dachfenster
+- manufacturer: Velux
+  model: KLF200
+  device_type: KLF200
+  config: PressDurationForDriveToEnd=500;AdjustDownTime=0;
+  description: Dachfenster
+- manufacturer: Velux
+  model: KLF50
+  device_type: KLFXX
+  config: PressDurationForDriveToEnd=500;AdjustDownTime=0;
+  description: Dachfenster
+- manufacturer: Verve
+  model: X1100
+  com_profile: F6-02-01
+  device_type: PTMSwitchModule
+  config: NrOfButtons=1
+  description: Wandsender 2 Kanal
+- manufacturer: Verve
+  model: X2110
+  device_type: Dimmer_10
+  config: CommandEEP=VerveX2110;NrOfLRNTels=3
+  description: 10fach Schalt- und Dimmaktor
+- manufacturer: Wieland
+  model: gesis RC V-0/2W AL 1PH
+  com_profile: F6-02-01
+  device_type: Jalousie_2
+  config: PressDurationForDriveToEnd=700;CommandEEP=EEP_F60201_RockerSwitch;ReceiveEEP=none
+  description: UP-Jalousieaktor
+- manufacturer: Wieland
+  model: gesis RC V-0/4 1PH
+  com_profile: F6-02-01
+  device_type: Switch_4
+  config: CommandEEP=EEP_F60201;ReceiveEEP=none;ShowInvertOption=true;
+  description: Schaltaktor
+- manufacturer: Winkhaus
+  model: FM.A
+  com_profile: D5-00-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_D50001_WindowContact
+  description: Magnetkontakt
+- manufacturer: Winkhaus
+  model: FM.V
+  com_profile: A5-14-01
+  device_type: WindowContact
+  config: ReceiveEEP=EEP_A51401_MultifuncSensor
+  description: Magnetkontakt
+- manufacturer: micropelt
+  model: MVA-002
+  com_profile: A5-20-01
+  device_type: Valve_1
+  config: BaseTemp=20;ActorType=EEP_A52001_HeatingValveBIDI;SummerCommTimeoutSec=4500
+  description: Stellventilaktor proportional
+- manufacturer: micropelt
+  model: MVA-003
+  com_profile: A5-20-01
+  device_type: Valve_1
+  config: BaseTemp=20;ActorType=EEP_A52001_HeatingValveBIDI;SummerCommTimeoutSec=30000
+  description: Stellventilaktor proportional
+- manufacturer: micropelt
+  model: MVA-004
+  com_profile: A5-20-01
+  device_type: Valve_1
+  config: BaseTemp=20;ActorType=EEP_A52001_HeatingValveBIDI;SummerCommTimeoutSec=30000
+  description: Stellventilaktor proportional
+- manufacturer: micropelt
+  model: MVA-005
+  com_profile: A5-20-06
+  device_type: Valve_1
+  config: BaseTemp=20;ActorType=EEP_A52006_HeatingRadiatorValve;SummerCommTimeoutSec=30000;IODevice/SupportsReMan=true;
+  description: Stellventilaktor proportional
+- manufacturer: sensortec
+  model: RFFA10-P
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert
+- manufacturer: sensortec
+  model: RFFE20-P
+  com_profile: A5-10-03
+  device_type: RoomTemperatureControl
+  config: SensorType=Actual_Setpoint;SetpointMinTemp=15;SetpointMaxTemp=25;
+  description: akt.Temp,Sollwert
+- manufacturer: steute
+  model: EF 41 xx
+  device_type: DUXButtons
+  config: Buttons=ButtonMomentary
+  description: Schalter mit Solarenergiegenerator
+- manufacturer: steute
+  model: EF 95 xx
+  device_type: DUXButtons
+  config: Buttons=ButtonMomentary
+  description: Schalter mit mech. Energiegenerator
+- manufacturer: steute
+  model: RF RC 10 EN868
+  device_type: DUXButtons
+  config: Buttons=ButtonMomentary
+  description: Magnetschalter
+- manufacturer: steute
+  model: RF RC 10 EN868
+  device_type: WindowContact
+  config: ReceiveEEP=Eltako_FPE1
+  description: Magnetschalter
