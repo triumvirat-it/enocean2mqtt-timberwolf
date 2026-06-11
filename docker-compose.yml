@@ -1,0 +1,14 @@
+services:
+  enocean2mqtt:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: enocean2mqtt-timberwolf
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - LOG_LEVEL=INFO
+      - CONFIG_DIR=/data

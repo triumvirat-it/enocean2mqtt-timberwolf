@@ -1,0 +1,45 @@
+# Portainer-Stack Definition fuer enocean2mqtt_timberwolf
+#
+# Verwendung in Portainer:
+#   Stacks -> Add stack -> "Web editor" (Tab)
+#   Inhalt dieser Datei einfuegen, Stack-Name z.B. "enocean2mqtt"
+#   -> Deploy the stack
+#
+# Bei Updates:
+#   1. Neues Image bauen (per .\build.ps1 + Upload in Portainer Images)
+#   2. Portainer -> Stacks -> Stack auswaehlen -> "Update the stack"
+#      -> Pull and redeploy IS NOT supported here weil Image lokal ist
+#      -> Aber: Stack-Definition unveraendert -> Stack neu deployen,
+#         Portainer baut Container mit dem neuen Image-Tag neu auf
+#
+# Volume-Persistenz: das Volume "enocean2mqtt-data" wird automatisch
+# erstellt und bleibt erhalten (Configs ueberleben Updates).
+
+version: "3.8"
+
+services:
+  enocean2mqtt:
+    # WICHTIG: nutzt das lokal in Portainer hochgeladene Image
+    image: enocean2mqtt-tw:latest
+    container_name: enocean2mqtt
+    restart: unless-stopped
+    ports:
+      # Host-Port 8090, Container-Port 8080 (Web-UI kommt mit M4)
+      - "8090:8080"
+    volumes:
+      - enocean2mqtt-data:/data
+    environment:
+      - LOG_LEVEL=INFO
+      - CONFIG_DIR=/data
+    # Optional: Resource-Limits fuer Timberwolf (BCM2711, 4 Cores, ~2GB RAM)
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+volumes:
+  enocean2mqtt-data:
+    # Existierendes Volume wiederverwenden (kein Prefix, keine Neuanlage).
+    # Falls noch nicht vorhanden: vorab in Portainer Volumes -> Add volume.
+    external: true

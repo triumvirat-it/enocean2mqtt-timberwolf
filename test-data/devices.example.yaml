@@ -1,0 +1,63 @@
+# Beispiel-Devices — kopiere/erweitere als devices.yaml.
+# Geraete werden ueber die Web-UI angelegt (einzeln anlernen oder aus dem Produktkatalog).
+
+devices:
+  - device_id: beispiel_rollo_wz_links
+    manufacturer: Eltako
+    model: FSB61NP
+    name: Rollo Wohnzimmer Links
+    room: "Beispielwohnung/Wohnzimmer"
+    floor: "Beispielwohnung"
+    channels:
+      - channel_id: "1"
+        name: "Rollo links"
+        enocean_id: "01A00001"   # Empfangs-ID des Aktors
+        eep: A5-3F-7F
+        direction: rx
+        learned_pair_id: "FF81001A"  # der GW-Sender, der den Aktor steuert
+
+  - device_id: beispiel_temp_essen
+    manufacturer: "OPUS Jäger Direkt"
+    model: RTS55
+    name: Esszimmer Temperatur
+    room: "Temperaturcontrol"
+    floor: "Temperaturcontrol"
+    channels:
+      - channel_id: "1"
+        name: "Esszimmer"
+        enocean_id: "0005000C"
+        eep: A5-10-06
+        direction: rx
+
+  - device_id: pool_zaehler_heizung
+    manufacturer: Eltako
+    model: FWZ14-65A
+    name: Pool Heizung Stromzähler
+    room: "Pool"
+    floor: "Pool"
+    channels:
+      - channel_id: "1"
+        name: "Heizung kWh/W"
+        enocean_id: "FF8000A2"
+        eep: A5-12-01
+        direction: rx
+
+  - device_id: beispiel_buntlicht
+    manufacturer: "OPUS Jäger Direkt"
+    model: "OPUS Bridge UP-eSchalter 2 Kanal"
+    name: "Wohnen Bunt/TV"
+    room: "Beispielwohnung/Aussen"
+    floor: "Beispielwohnung"
+    channels:
+      - channel_id: "1"
+        name: "Buntlicht"
+        enocean_id: "019D0001"
+        eep: F6-02-01
+        direction: bi
+        learned_pair_id: "FF810035"
+      - channel_id: "2"
+        name: "TV"
+        enocean_id: "019D0001"
+        eep: F6-02-01
+        direction: bi
+        learned_pair_id: "FF810036"

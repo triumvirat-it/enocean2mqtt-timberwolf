@@ -1,0 +1,20 @@
+gateways:
+  - name: "Test GW"
+    type: TCM310-LAN
+    host: "192.168.99.99"
+    port: 5000
+    enabled: false
+    floor_assignments: ["Test"]
+cascade:
+  dedup_window_ms: 200
+  send_strategy: best_rssi
+mqtt:
+  host: "localhost"
+  port: 1883
+  client_id: "enocean2mqtt-test"
+  base_topic: "enocean"
+webui:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+log_level: INFO
