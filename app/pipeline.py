@@ -39,6 +39,20 @@ def _tele_channel_matches(actual, expected) -> bool:
         return str(actual) == str(expected)
 
 
+def _eep_rorg(eep: str | None) -> int | None:
+    """
+    RORG-Byte aus einem EEP-String (das erste Segment ist hex-codiert):
+    'F6-02-01' -> 0xF6, 'D2-01-XX' -> 0xD2, 'A5-12-01' -> 0xA5.
+    None wenn nicht parsbar.
+    """
+    if not eep:
+        return None
+    try:
+        return int(eep.split("-", 1)[0], 16)
+    except (ValueError, IndexError):
+        return None
+
+
 # A5-12-XX (Eltako-Zaehlerfamilie) — Mapping eines Field-Filters auf das
 # fachlich passende Feld eines anderen A5-12-EEPs. Wird verwendet bei
 #   (a) Auto-EEP-Wechsel via Lerntelegramm (PCT14-Folgesync) — siehe _process
@@ -208,8 +222,20 @@ class TelegramPipeline:
                         self.observed_senders.save()
             except Exception as exc:  # noqa: BLE001
                 log.debug("ObservedSender-Hook-Fehler: %s", exc)
-        # Wir nutzen den EEP des ersten Channels (sind alle gleich pro Sender)
+        # Normalfall: alle Channels eines Senders haben dasselbe EEP -> EEP des
+        # ersten Channels nehmen. SONDERFALL OPUS Bridge UP-eSchalter: dieselbe
+        # RX-ID traegt einen D2-01-Aktor-Status UND ein aufgesetztes F6-02-PTM-
+        # Wippensignal — also Channels mit UNTERSCHIEDLICHEN RORGs. Dann muss
+        # der Decoder zum tatsaechlichen RORG des Telegramms passen, sonst
+        # zerkaut z.B. der D2-01-Decoder ein RPS-Wippentelegramm zu cmd:0.
+        match_rorgs = {_eep_rorg(c.eep) for _d, c in matches if c.eep}
+        mixed_rorg = len({r for r in match_rorgs if r is not None}) > 1
         eep = matches[0][1].eep if matches else None
+        if matches and mixed_rorg:
+            for _d, c in matches:
+                if c.eep and _eep_rorg(c.eep) == tel.rorg:
+                    eep = c.eep
+                    break
         decoded = decode_telegram(eep, tel)
 
         # Press-Release-Tracking fuer RPS-Wippentaster: beim Press-Event den
@@ -378,6 +404,10 @@ class TelegramPipeline:
         device_match = None
         decoded_clean_match = {k: v for k, v in decoded.items() if not k.startswith("_")}
         for d_cand, c_cand in matches:
+            # RORG-Routing (OPUS Bridge): bei gemischten RORGs pro Sender nur
+            # den Channel betrachten, dessen EEP zum Telegramm-RORG passt.
+            if mixed_rorg and c_cand.eep and _eep_rorg(c_cand.eep) != tel.rorg:
+                continue
             m = c_cand.meta or {}
             f_filter = m.get("field")
             if f_filter and f_filter not in decoded_clean_match:
@@ -406,6 +436,11 @@ class TelegramPipeline:
             decoded_clean = {k: v for k, v in decoded.items() if not k.startswith("_")}
             preg = get_profile_registry()
             for device, channel in matches:
+                # RORG-Routing (OPUS Bridge): bei gemischten RORGs pro Sender
+                # published ein Telegramm nur an Channels mit passendem RORG.
+                # F6-PTM-Telegramm -> nur PTM-Channel, D2-Status -> nur Aktor.
+                if mixed_rorg and channel.eep and _eep_rorg(channel.eep) != tel.rorg:
+                    continue
                 meta = channel.meta or {}
                 # Field-Filter: wenn channel.meta.field gesetzt ist, published
                 # diesen Channel nur dann, wenn das passende Feld im decoded ist
