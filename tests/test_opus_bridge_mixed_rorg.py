@@ -123,15 +123,20 @@ def test_ptm_on_false_on_aus_press():
     assert payload.get("on") is False
 
 
-def test_ptm_on_retained_across_release():
-    # Press (on:true), dann Release: das Release-Telegramm darf den Boolean nicht
-    # verlieren — er muss aus dem Cache erhalten bleiben (retained Topic!).
+def test_ptm_on_only_on_press_release_keeps_duration():
+    # Sauberes Event: NUR der Druck traegt "on", das Release NICHT (kein
+    # Wiederholen). Die Press-Dauer-Infos (press_duration_ms/last_press_event)
+    # bleiben aber im Release-Telegramm erhalten — die werden woanders gebraucht.
     pipe, pub = _pipeline()
     asyncio.run(pipe._process(_rx(RORG.RPS, b"\x70", 0x30)))  # B0 = press_top -> on:true
     asyncio.run(pipe._process(_rx(RORG.RPS, b"\x00", 0x20)))  # Release (kein energy bow)
-    rel = [p for _d, c, p in pub.devices if c == "1.2"][-1]
-    assert rel.get("event") == "release"
-    assert rel.get("on") is True
+    msgs = [p for _d, c, p in pub.devices if c == "1.2"]
+    press_msg, release_msg = msgs[0], msgs[-1]
+    assert press_msg.get("on") is True
+    assert release_msg.get("event") == "release"
+    assert "on" not in release_msg                       # KEIN on-Repeat im Release
+    assert "press_duration_ms" in release_msg            # Dauer-Info bleibt
+    assert release_msg.get("last_press_event") == "B_top"
 
 
 def test_ptm_polarity_unten_einschalten_bottom_press_true():

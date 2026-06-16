@@ -138,12 +138,6 @@ class TelegramPipeline:
         # Subscriber kurz/lang differenzieren koennen.
         # Schluessel: sender_id_upper -> {rocker_side: (ts, event)}
         self._press_starts: dict[str, dict[str, tuple[float, str]]] = {}
-        # PTM-Schaltzustand (true/false) pro (sender_id, channel_id) fuer
-        # F6-02-Wippentaster — abgeleitet aus der Polung (ptm_on_press) wie im
-        # TXRouter. Gecacht, damit der Boolean auch im Release-Telegramm (kein
-        # rocker_1) erhalten bleibt und das retained /state-Topic nicht ohne
-        # "on" ueberschrieben wird. Schluessel: (sender_hex, channel_id) -> bool
-        self._ptm_on_cache: dict[tuple[str, str], bool] = {}
         # Web-UI Hooks (werden von server.py injiziert wenn UI laeuft)
         self.on_telegram_post = None  # callable(rx, device_match: dict|None)
         # Aktor-Feedback-Hook (wird von main.py mit tx_router.handle_feedback verknüpft)
@@ -517,22 +511,18 @@ class TelegramPipeline:
                     if unit_override:
                         payload_fields["unit"] = unit_override
 
-                # PTM-Schaltzustand: F6-02-Wippentaster liefern nur Press/Release-
-                # Ereignisse, kein stabiles Boolean. Fuer die Automatik-Anbindung
-                # leiten wir aus der Polung (ptm_on_press, pro Kanal via
-                # meta.ptm_on_press) ein on:true/false ab — EIN-Seite gedrueckt
-                # => true, AUS-Seite => false. Beim Release (kein rocker_1) den
-                # letzten Stand aus dem Cache halten, damit das retained Topic
-                # nicht ohne "on" ueberschrieben wird.
+                # PTM-Schaltzustand fuer die Automatik-Anbindung: F6-02-Wippen-
+                # taster liefern Press/Release-Ereignisse. Wir publishen on:true/
+                # false als SAUBERES EVENT — NUR beim tatsaechlichen Druck (genau
+                # eine Nachricht pro Tastendruck), NICHT beim Loslassen
+                # wiederholen. So zaehlt eine Automatik pro Druck genau einen
+                # Schritt (EIN-Seite => true, AUS-Seite => false; Polung via
+                # ptm_on_press, pro Kanal ueber meta.ptm_on_press). Das Release-
+                # Telegramm traegt bewusst KEIN "on".
                 if "rocker_action" in decoded_clean:
                     pol = (meta.get("ptm_on_press")
                            or getattr(self.defaults, "ptm_on_press", "I"))
                     on_val = ptm_press_is_on(decoded_clean, pol)
-                    cache_key = (sender_hex, channel.channel_id)
-                    if on_val is None:
-                        on_val = self._ptm_on_cache.get(cache_key)
-                    else:
-                        self._ptm_on_cache[cache_key] = on_val
                     if on_val is not None:
                         payload_fields["on"] = on_val
 
