@@ -40,6 +40,30 @@ log = logging.getLogger(__name__)
 SHUTTER_STEP_S = 0.4
 
 
+def ptm_press_is_on(decoded: dict, pol: str) -> bool | None:
+    """
+    War ein F6-02-Wippendruck die EIN- oder die AUS-Seite?
+
+    Prueft gegen die PHYSISCHEN press_top/press_bottom-Labels des Decoders, NICHT
+    gegen die AI/BI-Rocker-Codes: deren oben/unten-Zuordnung ist gegenlaeufig zur
+    UI-Polung (Decoder: Suffix 'I' = unten, '0' = oben; live am Geraet bestaetigt).
+    Damit folgt die Polung der Klartext-Einstellung:
+      pol "I" = oben schaltet EIN  -> press_top    => True
+      pol "0" = unten schaltet EIN -> press_bottom => True
+    Rueckgabe None, wenn kein eindeutiger Druck (z.B. Release) im Telegramm steckt
+    -> Aufrufer behandelt das als "uneindeutig" (Toggle) bzw. haelt den letzten Stand.
+    """
+    action = decoded.get("rocker_action")
+    if action == "press_top":
+        side = "top"
+    elif action == "press_bottom":
+        side = "bottom"
+    else:
+        return None
+    on_side = "top" if pol == "I" else "bottom"
+    return side == on_side
+
+
 def classify_channel_kind(channel: DeviceChannel) -> str:
     """
     Aktor-Klassifikation (rx/switch/dimmer/shutter/valve).
@@ -560,19 +584,16 @@ class TXRouter:
         st.last_command_at = now
 
         kind = self._kind(channel)
-        rocker = decoded.get("rocker_1") or ""
-        # AI = oben-links, A0 = unten-links, BI = oben-rechts, B0 = unten-rechts.
         # PTM-Polung: welche Wippen-Haelfte schaltet EIN? Global per
         # cfg.defaults.ptm_on_press, pro Kanal via channel.meta.ptm_on_press
-        # ueberschreibbar. "I" (Default) = oben (AI/BI) = EIN; "0" = unten.
+        # ueberschreibbar. "I" (Default) = oben schaltet EIN, "0" = unten.
+        # Zuordnung ueber die physischen press_top/press_bottom-Labels (siehe
+        # ptm_press_is_on) — die rohen AI/BI-Codes waeren gegenlaeufig.
         pol = (channel.meta.get("ptm_on_press")
                or getattr(getattr(self.cfg, "defaults", None), "ptm_on_press", "I"))
-        if pol == "0":
-            is_on_press = rocker in ("A0", "B0")
-            is_off_press = rocker in ("AI", "BI")
-        else:
-            is_on_press = rocker in ("AI", "BI")
-            is_off_press = rocker in ("A0", "B0")
+        on_press = ptm_press_is_on(decoded, pol)
+        is_on_press = on_press is True
+        is_off_press = on_press is False
 
         if kind == "switch":
             if is_on_press:

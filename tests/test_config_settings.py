@@ -54,19 +54,30 @@ def _switch_router(cfgdir: Path, polarity: str) -> tuple[TXRouter, DeviceChannel
 
 
 def test_ptm_polarity_global_default():
+    # Polung folgt der KLARTEXT-Seite ueber die physischen press_top/bottom-Labels
+    # des Decoders (NICHT die AI/BI-Codes, deren oben/unten-Zuordnung gegenlaeufig
+    # ist). "I" = oben schaltet EIN -> press_top, "0" = unten -> press_bottom.
     with tempfile.TemporaryDirectory() as td:
         cfgdir = Path(td)
         _write_cfg(cfgdir)
-        # Polung "I": oben (AI) schaltet EIN
+        # Polung "I" (oben EIN): press_top schaltet EIN
         r, ch = _switch_router(cfgdir, "I")
-        r._apply_ptm_press("dev", "1", ch, {"pressed": True, "rocker_1": "AI"})
+        r._apply_ptm_press("dev", "1", ch,
+                           {"pressed": True, "rocker_1": "A0", "rocker_action": "press_top"})
         assert r.state_store.get("dev", "1").on is True
 
-        # Polung "0": oben (AI) schaltet jetzt AUS
+        # Polung "0" (unten EIN): derselbe press_top schaltet jetzt AUS
         r2, ch2 = _switch_router(cfgdir, "0")
         r2.state_store.get("dev", "1").on = True
-        r2._apply_ptm_press("dev", "1", ch2, {"pressed": True, "rocker_1": "AI"})
+        r2._apply_ptm_press("dev", "1", ch2,
+                            {"pressed": True, "rocker_1": "A0", "rocker_action": "press_top"})
         assert r2.state_store.get("dev", "1").on is False
+
+        # ...und ein press_bottom schaltet bei "0" (unten EIN) EIN
+        r3, ch3 = _switch_router(cfgdir, "0")
+        r3._apply_ptm_press("dev", "1", ch3,
+                            {"pressed": True, "rocker_1": "AI", "rocker_action": "press_bottom"})
+        assert r3.state_store.get("dev", "1").on is True
 
 
 def test_mqtt_set_topic_resolves_name_slugs_to_ids():
@@ -128,9 +139,15 @@ def test_ptm_polarity_per_channel_override():
     with tempfile.TemporaryDirectory() as td:
         cfgdir = Path(td)
         _write_cfg(cfgdir)
-        # Global "I", aber dieser Kanal ueberschreibt auf "0"
+        # Global "I", aber dieser Kanal ueberschreibt auf "0" (unten EIN).
         r, ch = _switch_router(cfgdir, "I")
         ch.meta["ptm_on_press"] = "0"
+        # press_top schaltet bei "0" AUS
         r.state_store.get("dev", "1").on = True
-        r._apply_ptm_press("dev", "1", ch, {"pressed": True, "rocker_1": "AI"})
+        r._apply_ptm_press("dev", "1", ch,
+                           {"pressed": True, "rocker_1": "B0", "rocker_action": "press_top"})
         assert r.state_store.get("dev", "1").on is False
+        # press_bottom schaltet bei "0" EIN
+        r._apply_ptm_press("dev", "1", ch,
+                           {"pressed": True, "rocker_1": "BI", "rocker_action": "press_bottom"})
+        assert r.state_store.get("dev", "1").on is True

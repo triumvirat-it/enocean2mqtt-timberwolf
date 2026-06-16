@@ -14,7 +14,7 @@ from .devices import Device, DeviceChannel, DeviceRegistry
 from .eep import decode_telegram, get_profile_registry
 from .gateway import GatewayManager, ReceivedTelegram
 from .mqtt_client import MQTTPublisher
-from .tx_router import classify_channel_kind
+from .tx_router import classify_channel_kind, ptm_press_is_on
 
 log = logging.getLogger(__name__)
 
@@ -37,30 +37,6 @@ def _tele_channel_matches(actual, expected) -> bool:
         return int(actual) == int(expected)
     except (TypeError, ValueError):
         return str(actual) == str(expected)
-
-
-def _ptm_on_from_rocker(rocker: str | None, pol: str) -> bool | None:
-    """
-    Schaltzustand (True/False) aus einem F6-02-Rocker-Code (AI/A0/BI/B0) gemaess
-    PTM-Polung — IDENTISCH zur TXRouter-Logik, damit der published Boolean mit
-    dem Aktor-Schaltverhalten uebereinstimmt.
-      pol "I" (Default): AI/BI = EIN,  A0/B0 = AUS
-      pol "0":           A0/B0 = EIN,  AI/BI = AUS
-    None, wenn kein eindeutiger Press im Telegramm steckt (z.B. Release).
-    """
-    if not rocker:
-        return None
-    if pol == "0":
-        if rocker in ("A0", "B0"):
-            return True
-        if rocker in ("AI", "BI"):
-            return False
-    else:
-        if rocker in ("AI", "BI"):
-            return True
-        if rocker in ("A0", "B0"):
-            return False
-    return None
 
 
 def _eep_rorg(eep: str | None) -> int | None:
@@ -551,7 +527,7 @@ class TelegramPipeline:
                 if "rocker_action" in decoded_clean:
                     pol = (meta.get("ptm_on_press")
                            or getattr(self.defaults, "ptm_on_press", "I"))
-                    on_val = _ptm_on_from_rocker(decoded_clean.get("rocker_1"), pol)
+                    on_val = ptm_press_is_on(decoded_clean, pol)
                     cache_key = (sender_hex, channel.channel_id)
                     if on_val is None:
                         on_val = self._ptm_on_cache.get(cache_key)
