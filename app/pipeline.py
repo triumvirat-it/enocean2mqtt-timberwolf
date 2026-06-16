@@ -39,6 +39,30 @@ def _tele_channel_matches(actual, expected) -> bool:
         return str(actual) == str(expected)
 
 
+def _ptm_on_from_rocker(rocker: str | None, pol: str) -> bool | None:
+    """
+    Schaltzustand (True/False) aus einem F6-02-Rocker-Code (AI/A0/BI/B0) gemaess
+    PTM-Polung — IDENTISCH zur TXRouter-Logik, damit der published Boolean mit
+    dem Aktor-Schaltverhalten uebereinstimmt.
+      pol "I" (Default): AI/BI = EIN,  A0/B0 = AUS
+      pol "0":           A0/B0 = EIN,  AI/BI = AUS
+    None, wenn kein eindeutiger Press im Telegramm steckt (z.B. Release).
+    """
+    if not rocker:
+        return None
+    if pol == "0":
+        if rocker in ("A0", "B0"):
+            return True
+        if rocker in ("AI", "BI"):
+            return False
+    else:
+        if rocker in ("AI", "BI"):
+            return True
+        if rocker in ("A0", "B0"):
+            return False
+    return None
+
+
 def _eep_rorg(eep: str | None) -> int | None:
     """
     RORG-Byte aus einem EEP-String (das erste Segment ist hex-codiert):
@@ -138,6 +162,12 @@ class TelegramPipeline:
         # Subscriber kurz/lang differenzieren koennen.
         # Schluessel: sender_id_upper -> {rocker_side: (ts, event)}
         self._press_starts: dict[str, dict[str, tuple[float, str]]] = {}
+        # PTM-Schaltzustand (true/false) pro (sender_id, channel_id) fuer
+        # F6-02-Wippentaster — abgeleitet aus der Polung (ptm_on_press) wie im
+        # TXRouter. Gecacht, damit der Boolean auch im Release-Telegramm (kein
+        # rocker_1) erhalten bleibt und das retained /state-Topic nicht ohne
+        # "on" ueberschrieben wird. Schluessel: (sender_hex, channel_id) -> bool
+        self._ptm_on_cache: dict[tuple[str, str], bool] = {}
         # Web-UI Hooks (werden von server.py injiziert wenn UI laeuft)
         self.on_telegram_post = None  # callable(rx, device_match: dict|None)
         # Aktor-Feedback-Hook (wird von main.py mit tx_router.handle_feedback verknüpft)
@@ -153,6 +183,9 @@ class TelegramPipeline:
         self.observed_senders = None
         # Liste der Gateway-Configs fuer Block-Matching (von main.py gesetzt)
         self._gateway_configs = None
+        # Globale Defaults (cfg.defaults) — fuer ptm_on_press-Polung beim
+        # Ableiten des PTM-Schaltzustands. Von main.py injiziert.
+        self.defaults = None
 
     @property
     def unknown_senders(self) -> set[str]:
@@ -507,6 +540,25 @@ class TelegramPipeline:
                             payload_fields["units"] = units
                     if unit_override:
                         payload_fields["unit"] = unit_override
+
+                # PTM-Schaltzustand: F6-02-Wippentaster liefern nur Press/Release-
+                # Ereignisse, kein stabiles Boolean. Fuer die Automatik-Anbindung
+                # leiten wir aus der Polung (ptm_on_press, pro Kanal via
+                # meta.ptm_on_press) ein on:true/false ab — EIN-Seite gedrueckt
+                # => true, AUS-Seite => false. Beim Release (kein rocker_1) den
+                # letzten Stand aus dem Cache halten, damit das retained Topic
+                # nicht ohne "on" ueberschrieben wird.
+                if "rocker_action" in decoded_clean:
+                    pol = (meta.get("ptm_on_press")
+                           or getattr(self.defaults, "ptm_on_press", "I"))
+                    on_val = _ptm_on_from_rocker(decoded_clean.get("rocker_1"), pol)
+                    cache_key = (sender_hex, channel.channel_id)
+                    if on_val is None:
+                        on_val = self._ptm_on_cache.get(cache_key)
+                    else:
+                        self._ptm_on_cache[cache_key] = on_val
+                    if on_val is not None:
+                        payload_fields["on"] = on_val
 
                 # Schalter->Aktor: bei PTM-Telegrammen merken wir das so vor,
                 # dass die UI das richtige Topic mitbekommt

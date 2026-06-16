@@ -101,6 +101,54 @@ def test_d2_actuator_status_decoded_as_d2_not_f6():
     assert "rocker_action" not in payload
 
 
+def test_ptm_on_true_on_ein_press():
+    # BI-Press (payload 0x50), Default-Polung "I" -> EIN-Seite -> on:true.
+    pipe, pub = _pipeline()
+    asyncio.run(pipe._process(_rx(RORG.RPS, b"\x50", 0x30)))
+    payload = next(p for _d, c, p in pub.devices if c == "1.2")
+    assert payload.get("rocker_1") == "BI"
+    assert payload.get("on") is True
+
+
+def test_ptm_on_false_on_aus_press():
+    # B0-Press (payload 0x70), Default-Polung "I" -> AUS-Seite -> on:false.
+    pipe, pub = _pipeline()
+    asyncio.run(pipe._process(_rx(RORG.RPS, b"\x70", 0x30)))
+    payload = next(p for _d, c, p in pub.devices if c == "1.2")
+    assert payload.get("rocker_1") == "B0"
+    assert payload.get("on") is False
+
+
+def test_ptm_on_retained_across_release():
+    # Press (on:true), dann Release: das Release-Telegramm darf den Boolean nicht
+    # verlieren — er muss aus dem Cache erhalten bleiben (retained Topic!).
+    pipe, pub = _pipeline()
+    asyncio.run(pipe._process(_rx(RORG.RPS, b"\x50", 0x30)))  # BI press -> on:true
+    asyncio.run(pipe._process(_rx(RORG.RPS, b"\x00", 0x20)))  # Release (kein energy bow)
+    rel = [p for _d, c, p in pub.devices if c == "1.2"][-1]
+    assert rel.get("event") == "release"
+    assert rel.get("on") is True
+
+
+def test_ptm_polarity_override_per_channel():
+    # Kanal-Override meta.ptm_on_press="0" dreht die Polung: BI-Press ist dann
+    # die AUS-Seite -> on:false (statt true bei Default "I").
+    register_default_profiles()
+    dev = Device(
+        device_id="opus", name="x",
+        channels=[
+            DeviceChannel(channel_id="1.2", name="PTM", enocean_id="019D00E2",
+                          eep="F6-02-01", meta={"ptm_on_press": "0"}),
+        ],
+    )
+    pub = _CapturePublisher()
+    pipe = TelegramPipeline(manager=object(), publisher=pub,
+                            devices=DeviceRegistry([dev]), cascade=Cascade())
+    asyncio.run(pipe._process(_rx(RORG.RPS, b"\x50", 0x30)))  # BI press, pol "0" -> AUS
+    payload = next(p for _d, c, p in pub.devices if c == "1.2")
+    assert payload.get("on") is False
+
+
 def test_same_rorg_multichannel_unaffected():
     # Gegenprobe: zwei Channels mit GLEICHEM RORG (FT55-Stil) — RORG-Routing
     # darf hier NICHTS aendern, beide Channels sehen das Telegramm weiter.

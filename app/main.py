@@ -95,6 +95,7 @@ async def amain() -> int:
         observed_senders.save(force=True)
     pipeline.observed_senders = observed_senders
     pipeline._gateway_configs = cfg.gateways
+    pipeline.defaults = cfg.defaults
     tx_router = TXRouter(cfg, manager, devices, cascade, state_store=state_store)
     # M69: dim_speed wird beim Senden in channel.meta persistiert
     tx_router.devices_save_path = config_dir / "devices.yaml"
