@@ -525,6 +525,15 @@ class TelegramPipeline:
                     on_val = ptm_press_is_on(decoded_clean, pol)
                     if on_val is not None:
                         payload_fields["on"] = on_val
+                    # Momentan-Signale fuer flankenbasierte Automatik (z.B.
+                    # Dimm-Sequenz pro Tastendruck): taster_ein/taster_aus sind
+                    # true GENAU im Druck-Telegramm der jeweiligen Wippenseite
+                    # (Polung via ptm_on_press) und false sonst — insbesondere
+                    # beim Loslassen. So entsteht pro Druck eine vollstaendige
+                    # false->true->false-Flanke, auch bei mehreren Druecken
+                    # derselben Seite hintereinander.
+                    payload_fields["taster_ein"] = on_val is True
+                    payload_fields["taster_aus"] = on_val is False
 
                 # Schalter->Aktor: bei PTM-Telegrammen merken wir das so vor,
                 # dass die UI das richtige Topic mitbekommt
