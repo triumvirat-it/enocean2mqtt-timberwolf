@@ -519,21 +519,26 @@ class TelegramPipeline:
                 # Schritt (EIN-Seite => true, AUS-Seite => false; Polung via
                 # ptm_on_press, pro Kanal ueber meta.ptm_on_press). Das Release-
                 # Telegramm traegt bewusst KEIN "on".
+                # PTM-Tasten als Trigger-Events fuer flankenlose Logik-Engines.
+                # Hintergrund: der Timberwolf-"Triggered"-Baustein prueft nur, OB
+                # ein Eingang im aktuellen Logikdurchlauf "angefasst" wurde — der
+                # WERT ist egal, es zaehlt allein, dass eine Nachricht auf dem
+                # Feld ankam. Deshalb darf taster_ein NUR im EIN-Druck und
+                # taster_aus NUR im AUS-Druck im Payload stehen (Polung via
+                # ptm_on_press); beim Loslassen KEINES von beiden. So loest die
+                # Logik genau EINMAL pro Druck aus, und der AUS-Druck beruehrt
+                # nur taster_aus (faellt also sicher in den AUS-Zweig). "on"
+                # bleibt zusaetzlich als einfacher Schaltzustand (nur beim Druck).
                 if "rocker_action" in decoded_clean:
                     pol = (meta.get("ptm_on_press")
                            or getattr(self.defaults, "ptm_on_press", "I"))
                     on_val = ptm_press_is_on(decoded_clean, pol)
-                    if on_val is not None:
-                        payload_fields["on"] = on_val
-                    # Momentan-Signale fuer flankenbasierte Automatik (z.B.
-                    # Dimm-Sequenz pro Tastendruck): taster_ein/taster_aus sind
-                    # true GENAU im Druck-Telegramm der jeweiligen Wippenseite
-                    # (Polung via ptm_on_press) und false sonst — insbesondere
-                    # beim Loslassen. So entsteht pro Druck eine vollstaendige
-                    # false->true->false-Flanke, auch bei mehreren Druecken
-                    # derselben Seite hintereinander.
-                    payload_fields["taster_ein"] = on_val is True
-                    payload_fields["taster_aus"] = on_val is False
+                    if on_val is True:
+                        payload_fields["on"] = True
+                        payload_fields["taster_ein"] = True
+                    elif on_val is False:
+                        payload_fields["on"] = False
+                        payload_fields["taster_aus"] = True
 
                 # Schalter->Aktor: bei PTM-Telegrammen merken wir das so vor,
                 # dass die UI das richtige Topic mitbekommt

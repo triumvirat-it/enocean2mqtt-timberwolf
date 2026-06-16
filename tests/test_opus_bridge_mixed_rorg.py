@@ -139,37 +139,30 @@ def test_ptm_on_only_on_press_release_keeps_duration():
     assert release_msg.get("last_press_event") == "B_top"
 
 
-def test_ptm_momentary_taster_signals():
-    # Zwei Momentan-Signale fuer flankenbasierte Automatik: taster_ein ist true
-    # GENAU im Druck der EIN-Seite, taster_aus im Druck der AUS-Seite; beim
-    # Loslassen beide false (Reset-Flanke). Default-Polung "I": oben = EIN.
-    pipe, pub = _pipeline()
-    # oben/EIN gedrueckt (B0 = press_top)
-    asyncio.run(pipe._process(_rx(RORG.RPS, b"\x70", 0x30)))
+def test_ptm_taster_ein_only_on_ein_press():
+    # Timberwolf "Triggered" prueft nur, OB ein Eingang angefasst wurde (Wert
+    # egal). Darum traegt taster_ein NUR der EIN-Druck, taster_aus gar nicht;
+    # das Release traegt KEINES von beiden -> genau EIN Trigger pro Druck.
+    pipe, pub = _pipeline()  # Default-Polung "I": oben (press_top) = EIN
+    asyncio.run(pipe._process(_rx(RORG.RPS, b"\x70", 0x30)))  # B0 = press_top
     m = next(p for _d, c, p in pub.devices if c == "1.2")
     assert m.get("taster_ein") is True
-    assert m.get("taster_aus") is False
-    # Loslassen -> beide false (sorgt fuer die fallende Flanke)
+    assert "taster_aus" not in m
+    # Loslassen traegt weder taster_ein noch taster_aus (kein zweiter Trigger)
     asyncio.run(pipe._process(_rx(RORG.RPS, b"\x00", 0x20)))
     rel = [p for _d, c, p in pub.devices if c == "1.2"][-1]
-    assert rel.get("taster_ein") is False
-    assert rel.get("taster_aus") is False
-    # weiterer oben-Druck erzeugt erneut taster_ein:true (volle neue Flanke).
-    # A0 (0x30) ist ebenfalls press_top/oben — andere Payload, damit die Cascade
-    # ihn im Test nicht als Duplikat verwirft (echte Druecke liegen zeitlich weit
-    # auseinander und werden ohnehin nicht dedupt).
-    asyncio.run(pipe._process(_rx(RORG.RPS, b"\x30", 0x30)))
-    m2 = [p for _d, c, p in pub.devices if c == "1.2"][-1]
-    assert m2.get("taster_ein") is True
+    assert "taster_ein" not in rel
+    assert "taster_aus" not in rel
 
 
-def test_ptm_momentary_aus_press():
-    # unten/AUS gedrueckt (BI = press_bottom) bei Default-Polung "I"
+def test_ptm_taster_aus_only_on_aus_press():
+    # AUS-Druck (BI = press_bottom bei Default-Polung "I") beruehrt NUR
+    # taster_aus, nicht taster_ein -> Logik faellt sicher in den AUS-Zweig.
     pipe, pub = _pipeline()
     asyncio.run(pipe._process(_rx(RORG.RPS, b"\x50", 0x30)))
     m = next(p for _d, c, p in pub.devices if c == "1.2")
-    assert m.get("taster_ein") is False
     assert m.get("taster_aus") is True
+    assert "taster_ein" not in m
 
 
 def test_ptm_polarity_unten_einschalten_bottom_press_true():
