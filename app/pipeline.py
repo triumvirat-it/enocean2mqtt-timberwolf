@@ -356,12 +356,20 @@ class TelegramPipeline:
         #     Sub-Tarif der nicht aktiv ist) — die UI/MQTT bekommen erst dann
         #     einen Wert, wenn ein echter Zaehlerstand reinkommt
         #   - Spaetere Lesung muss >= letzten bekannten Stand sein
+        #   - ABER: ein unplausibel grosser Sprung NACH OBEN (Funk-Bitfehler /
+        #     Bus-Artefakt) wird ebenfalls verworfen und NICHT in den Cache
+        #     uebernommen. Sonst vergiftet ein einziger Ausreisser den Cache
+        #     dauerhaft: er wird zum neuen "Hoechststand", und ab da gelten
+        #     alle echten (niedrigeren) Werte als "Monotonie verletzt" und
+        #     fliegen fuer immer raus (genau so ist Bueromzaehler auf 99472
+        #     festgehaengt, obwohl er real bei ~47172 steht).
         # Cache-Schluessel: (sender_id, tariff)
         if "energy_kwh" in decoded:
             new_val = decoded["energy_kwh"]
             tariff = decoded.get("tariff", 0)
             cache_key = (sender_hex, int(tariff), "energy_kwh")
             last_val = self._monotonic_cache.get(cache_key)
+            max_jump = getattr(self.defaults, "energy_max_jump_kwh", 1000.0)
             if isinstance(new_val, (int, float)):
                 if last_val is None:
                     # Erstmessung: 0-Werte sind verdaechtig (Sub-Tarif inaktiv,
@@ -379,6 +387,16 @@ class TelegramPipeline:
                         "Monotonie verletzt — verworfen: %s tariff=%s "
                         "energy_kwh %.2f -> %.2f (Zaehlerstand laeuft nie zurueck)",
                         sender_hex, tariff, last_val, new_val,
+                    )
+                    return
+                elif max_jump and (new_val - last_val) > max_jump:
+                    # Sprung nach oben zu gross — Ausreisser, NICHT cachen.
+                    log.warning(
+                        "Unplausibler energy_kwh-Sprung verworfen: %s tariff=%s "
+                        "%.2f -> %.2f (+%.2f > max %.2f kWh) — vermutlich "
+                        "Funk-/Bus-Stoerung, Cache bleibt bei %.2f",
+                        sender_hex, tariff, last_val, new_val,
+                        new_val - last_val, max_jump, last_val,
                     )
                     return
                 else:

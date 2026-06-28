@@ -81,6 +81,13 @@ class DefaultsConfig(BaseModel):
         description="Welche Wippen-Haelfte schaltet EIN: 'I' = oben (AI/BI), "
         "'0' = unten (A0/B0). Pro Kanal via meta.ptm_on_press ueberschreibbar.",
     )
+    energy_max_jump_kwh: float = Field(
+        1000.0,
+        description="Maximal plausibler Sprung eines energy_kwh-Zaehlerstands "
+        "zwischen zwei Telegrammen. Groessere Spruenge nach oben gelten als "
+        "Funk-/Bus-Stoerung und werden verworfen (sonst wuerde ein einzelner "
+        "Ausreisser den Monotonie-Filter dauerhaft 'vergiften'). 0 = aus.",
+    )
 
 
 class AppConfig(BaseModel):

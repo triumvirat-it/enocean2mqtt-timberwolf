@@ -759,6 +759,7 @@ def create_app(srv: WebUIServer) -> FastAPI:
             },
             "defaults": {
                 "ptm_on_press": srv.cfg.defaults.ptm_on_press,
+                "energy_max_jump_kwh": srv.cfg.defaults.energy_max_jump_kwh,
             },
         }
 
@@ -790,6 +791,15 @@ def create_app(srv: WebUIServer) -> FastAPI:
                 if val not in ("I", "0"):
                     raise HTTPException(422, "ptm_on_press muss 'I' oder '0' sein")
                 srv.cfg.defaults.ptm_on_press = val
+            mj = payload.defaults.get("energy_max_jump_kwh")
+            if mj is not None:
+                try:
+                    mj = float(mj)
+                except (TypeError, ValueError):
+                    raise HTTPException(422, "energy_max_jump_kwh muss eine Zahl sein")
+                if mj < 0:
+                    raise HTTPException(422, "energy_max_jump_kwh darf nicht negativ sein")
+                srv.cfg.defaults.energy_max_jump_kwh = mj
 
         srv.cfg.save(srv.config_dir)
 
