@@ -179,6 +179,22 @@
       border-radius: var(--radius-pill); box-shadow: var(--shadow); font-size: 0.85rem; z-index: 50;
     }
     .toastbar.err { background: var(--coral); }
+
+    /* Suche (M114) */
+    .m-search {
+      width: 100%; box-sizing: border-box; margin-bottom: 0.9rem;
+      padding: 0.7rem 0.9rem; font-size: 1rem; color: var(--ink);
+      background: #fff; border: 1px solid var(--line); border-radius: var(--radius-pill);
+      outline: none; -webkit-appearance: none;
+    }
+    .m-search:focus { border-color: var(--mint); }
+    .m-badge {
+      display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.45rem;
+      font-size: 0.66rem; font-weight: 600; vertical-align: middle;
+      color: var(--ink); background: var(--tint); border: 1px solid var(--line);
+      border-radius: var(--radius-pill);
+    }
+    .m-ids { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.7rem; }
   </style>
 </head>
 <body>
@@ -200,6 +216,33 @@
     </div>
 
     <div class="m-body">
+      <!-- Suche: Name/Raum/ID, auch ueber Sender- und Beobachter-IDs (M114) -->
+      <input class="m-search" v-model="q" type="search" autocomplete="off"
+             placeholder="Suchen: Name, Raum, ID (auch Sender/Beobachter) …">
+
+      <!-- Suchmodus: flache Trefferliste statt Raum-Gruppierung -->
+      <template v-if="q.trim()">
+        <div v-if="!searchResults.length" class="empty">
+          <div class="icon">🔍</div>
+          <p>Keine Treffer für „{{ q }}".</p>
+          <p v-if="searchHint && searchHint.found" style="font-size:0.85rem">📡 ID <b>{{ searchHint.sender_id }}</b> wird auf Gateway <b>{{ searchHint.gateway }}</b> empfangen ({{ searchHint.rssi }} dBm, {{ searchHint.ago }}), ist aber keinem Gerät zugewiesen.</p>
+          <p v-else-if="searchHint && !searchHint.found" style="font-size:0.85rem">Diese ID wurde auch nicht im Live-Log empfangen.</p>
+        </div>
+        <div v-else>
+          <div v-for="r in searchResults" :key="r.device_id" class="tile tile-col">
+            <div class="tile-info">
+              <div class="tile-name">{{ r.name }}
+                <span v-for="x in r.reasons" :key="x" class="m-badge">{{ x }}</span>
+              </div>
+              <div class="tile-meta">{{ r.room }}<template v-if="r.sub"> · {{ r.sub }}</template></div>
+              <div class="tile-meta m-ids" v-if="r.ids.length">{{ r.ids.join(' · ') }}</div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Normalmodus: nach Etage/Raum gruppiertes Dashboard -->
+      <template v-else>
       <div v-if="!groups.length && !loading" class="empty">
         <div class="icon">💡</div>
         <p>Keine Geräte gefunden.<br>Lege Aktoren/Sensoren in der Desktop-App an.</p>
@@ -294,6 +337,7 @@
           </div>
         </div>
       </div>
+      </template>
     </div>
 
     <!-- Fuss: komplettes Triumvirat-Logo (echtes CI-Asset, hell) -->
@@ -313,6 +357,8 @@
     createApp({
       setup() {
         const devices = ref([]);
+        const gws = ref([]);          // /api/gateways (inkl. observed_senders)
+        const q = ref("");            // Suchbegriff (Name/Raum/ID)
         const version = ref("");
         const loading = ref(false);
         const openFloor = reactive({});   // floor -> bool
@@ -486,12 +532,91 @@
             const r = await fetch("/api/devices");
             if (!r.ok) throw new Error(r.status + "");
             devices.value = await r.json();
+            // Gateways (observed_senders) fuer den "ID empfangen, aber nicht
+            // zugewiesen"-Hinweis in der Suche — Fehler hier sind unkritisch.
+            try {
+              const rg = await fetch("/api/gateways");
+              if (rg.ok) gws.value = await rg.json();
+            } catch (e) { /* egal */ }
           } catch (e) {
             flash("Laden fehlgeschlagen", true);
           } finally {
             loading.value = false;
           }
         }
+
+        // ===== Suche (M114) =====
+        // Findet ein Geraet auch ueber Sender-/Beobachter-IDs eines Kanals,
+        // leerzeichen-tolerant — und weist auf empfangene, aber nicht
+        // zugewiesene IDs hin (observed_senders).
+        function compactId(s) { return String(s || "").replace(/\s+/g, "").toUpperCase(); }
+        function channelIds(c) {
+          const ids = [];
+          if (c.enocean_id) ids.push(c.enocean_id);
+          if (c.learned_pair_id) ids.push(c.learned_pair_id);
+          for (const s of (c.senders || [])) if (s && s.sender_id) ids.push(s.sender_id);
+          for (const o of (c.observers || [])) {
+            const sid = (typeof o === "string") ? o : (o && o.sender_id);
+            if (sid) ids.push(sid);
+          }
+          return ids.map(compactId);
+        }
+        function matchReasons(d, qc) {
+          if (!qc) return [];
+          const reasons = new Set();
+          for (const c of (d.channels || [])) {
+            if (c.enocean_id && compactId(c.enocean_id).includes(qc)) reasons.add("Empfang");
+            if (c.learned_pair_id && compactId(c.learned_pair_id).includes(qc)) reasons.add("Sender");
+            for (const s of (c.senders || [])) {
+              if (s && s.sender_id && compactId(s.sender_id).includes(qc)) reasons.add(s.active ? "Sender" : "Beobachter");
+            }
+            for (const o of (c.observers || [])) {
+              const sid = (typeof o === "string") ? o : (o && o.sender_id);
+              if (sid && compactId(sid).includes(qc)) reasons.add("Beobachter");
+            }
+          }
+          return [...reasons];
+        }
+        const searchResults = computed(() => {
+          const qt = q.value.toLowerCase().trim();
+          if (!qt) return [];
+          const qc = compactId(qt);
+          const out = [];
+          for (const d of devices.value) {
+            const channels = d.channels || [];
+            const text = [d.name, d.manufacturer, d.model, d.room, d.device_id]
+              .concat(channels.map(c => c.name || "")).join(" ").toLowerCase();
+            let hit = text.includes(qt);
+            if (!hit && qc.length >= 3) {
+              for (const c of channels) { if (channelIds(c).some(id => id.includes(qc))) { hit = true; break; } }
+            }
+            if (!hit) continue;
+            const fl = (d.floor || "").trim();
+            out.push({
+              device_id: d.device_id,
+              name: d.name || d.device_id,
+              sub: [d.manufacturer, d.model].filter(Boolean).join(" "),
+              room: (fl ? fl + " · " : "") + ((d.room || "").trim() || "Ohne Raum"),
+              reasons: matchReasons(d, qc),
+              ids: [...new Set(channels.flatMap(channelIds))],
+            });
+          }
+          return out;
+        });
+        const searchHint = computed(() => {
+          const qc = compactId(q.value.trim());
+          if (!qc || qc.length < 4 || !/^[0-9A-F]+$/.test(qc)) return null;
+          if (searchResults.value.length > 0) return null;
+          for (const gw of (gws.value || [])) {
+            const obs = (gw.block && gw.block.observed) || [];
+            for (const o of obs) {
+              if (compactId(o.sender_id).includes(qc)) {
+                return { found: true, sender_id: o.sender_id, gateway: gw.name, rssi: o.rssi_dbm, ago: fmtAgo(o.last_seen) };
+              }
+            }
+          }
+          return { found: false };
+        });
 
         // M95: effektive Etage/Raum (Channel-Override vor Device)
         function effFloor(d, ch) { return ((ch.floor || "").trim() || (d.floor || "").trim()) || "Ohne Geschoss"; }
@@ -701,6 +826,7 @@
 
         return {
           loading, version, groups, actorCount, toast, toastErr,
+          q, searchResults, searchHint,
           isFloorOpen, toggleFloor, isRoomOpen, toggleRoom, load,
           isOn, dimVal, posVal, hasPos,
           toggleSwitch, toggleDimmer, setDim, shutter, setPosition,

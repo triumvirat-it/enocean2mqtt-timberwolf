@@ -250,8 +250,12 @@ const TabDevices = {
         const devices = ref([]);
         const filter = ref("");
         const expanded = ref(new Set());
+        // M114: Gateways (inkl. observed_senders) fuer den "ID empfangen, aber
+        // nicht zugewiesen"-Hinweis in der Suche.
+        const gws = ref([]);
 
         async function refresh() {
+            try { gws.value = await api.get("/api/gateways"); } catch (e) { /* silent */ }
             const fresh = await api.get("/api/devices");
             if (devices.value.length === 0) {
                 devices.value = fresh;
@@ -863,16 +867,94 @@ const TabDevices = {
             refresh();
         }
 
+        // M114: Suche nicht nur ueber enocean_id (Empfang), sondern auch ueber
+        // Sender- und Beobachter-IDs eines Kanals — und leerzeichen-tolerant.
+        // So findet man eine PTM-ID (z.B. "00 2F FB 57") auch dann, wenn sie nur
+        // als Beobachter an einem Aktor-Kanal haengt.
+        function compactId(s) { return String(s || "").replace(/\s+/g, "").toUpperCase(); }
+        function channelIds(c) {
+            const ids = [];
+            if (c.enocean_id) ids.push(c.enocean_id);
+            if (c.learned_pair_id) ids.push(c.learned_pair_id);
+            for (const s of (c.senders || [])) if (s && s.sender_id) ids.push(s.sender_id);
+            for (const o of (c.observers || [])) {
+                const sid = (typeof o === "string") ? o : (o && o.sender_id);
+                if (sid) ids.push(sid);
+            }
+            return ids.map(compactId);
+        }
+        // Begruendung warum ein Geraet zum ID-Suchbegriff passt (Empfang/Sender/
+        // Beobachter) — fuer kleine Kennzeichen in der Trefferliste.
+        function matchReasons(d, qc) {
+            if (!qc) return [];
+            const reasons = new Set();
+            for (const c of (d.channels || [])) {
+                if (c.enocean_id && compactId(c.enocean_id).includes(qc)) reasons.add("Empfang");
+                if (c.learned_pair_id && compactId(c.learned_pair_id).includes(qc)) reasons.add("Sender");
+                for (const s of (c.senders || [])) {
+                    if (s && s.sender_id && compactId(s.sender_id).includes(qc)) {
+                        reasons.add(s.active ? "Sender" : "Beobachter");
+                    }
+                }
+                for (const o of (c.observers || [])) {
+                    const sid = (typeof o === "string") ? o : (o && o.sender_id);
+                    if (sid && compactId(sid).includes(qc)) reasons.add("Beobachter");
+                }
+            }
+            return [...reasons];
+        }
+
         const filtered = computed(() => {
             const q = filter.value.toLowerCase().trim();
             if (!q) return devices.value;
+            const qc = compactId(q);
             return devices.value.filter(d => {
                 const channels = d.channels || [];
                 const hay = [
                     d.name, d.manufacturer, d.model, d.room, d.device_id,
-                ].concat(channels.map(c => c.name + " " + (c.enocean_id || ""))).join(" ").toLowerCase();
-                return hay.includes(q);
+                ].concat(channels.map(c => c.name || "")).join(" ").toLowerCase();
+                if (hay.includes(q)) return true;
+                // ID-Treffer (leerzeichen-tolerant) ueber alle Kanal-IDs
+                if (qc.length >= 3) {
+                    for (const c of channels) {
+                        if (channelIds(c).some(id => id.includes(qc))) return true;
+                    }
+                }
+                return false;
             });
+        });
+
+        // M114: Hinweis, wenn eine gesuchte ID keinem Geraet zugeordnet ist, aber
+        // im Funk empfangen wurde (observed_senders, ausgeliefert pro Gateway).
+        function fmtAgoSecs(ts) {
+            if (!ts) return "noch nie";
+            const age = Math.round((Date.now() / 1000) - ts);
+            if (age < 60) return "vor " + age + "s";
+            if (age < 3600) return "vor " + Math.floor(age / 60) + " min";
+            if (age < 86400) return "vor " + Math.floor(age / 3600) + " h";
+            return "vor " + Math.floor(age / 86400) + " d";
+        }
+        const searchHint = computed(() => {
+            const qc = compactId(filter.value.trim());
+            // nur fuer ID-artige Eingaben und nur wenn es keine Geraete-Treffer gibt
+            if (!qc || qc.length < 4 || !/^[0-9A-F]+$/.test(qc)) return null;
+            if (filtered.value.length > 0) return null;
+            for (const gw of (gws.value || [])) {
+                const obs = (gw.block && gw.block.observed) || [];
+                for (const o of obs) {
+                    if (compactId(o.sender_id).includes(qc)) {
+                        return {
+                            found: true,
+                            sender_id: o.sender_id,
+                            gateway: gw.name,
+                            rssi: o.rssi_dbm,
+                            ago: fmtAgoSecs(o.last_seen),
+                            count: o.count,
+                        };
+                    }
+                }
+            }
+            return { found: false };
         });
 
         function channelCount(devs) {
@@ -1974,6 +2056,7 @@ const TabDevices = {
 
         return {
             observerSummary,
+            matchReasons, compactId, searchHint,
             devices, filter, filtered, expanded, toggle, copy, topic, clipboardOk,
             deleteDev,
             testChannel, channelCount, firstChannelTags, fileSizeKB,
@@ -2008,13 +2091,17 @@ const TabDevices = {
         '  </div>',
         '</div>',
         '<div class="card" style="margin-bottom: 1rem">',
-        '  <input class="input" v-model="filter" placeholder="Suchen (Name, Hersteller, Raum, ID, Tag) …">',
+        '  <input class="input" v-model="filter" placeholder="Suchen (Name, Hersteller, Raum, ID — auch Sender/Beobachter, Tag) …">',
         '</div>',
         '<div class="card" v-if="filtered.length === 0">',
         '  <div class="empty-state">',
         '    <div class="icon">📭</div>',
         '    <p v-if="devices.length === 0">Noch keine Geräte. Lern Geräte einzeln an oder lege sie aus dem Produktkatalog an.</p>',
-        '    <p v-else>Keine Treffer für "{{ filter }}".</p>',
+        '    <template v-else>',
+        '      <p>Keine Treffer für "{{ filter }}".</p>',
+        '      <p v-if="searchHint && searchHint.found" style="color: var(--muted); font-size: 0.9rem">📡 ID <b class="mono">{{ searchHint.sender_id }}</b> wird auf Gateway <b>{{ searchHint.gateway }}</b> empfangen ({{ searchHint.rssi }} dBm, zuletzt {{ searchHint.ago }}, {{ searchHint.count }}×), ist aber <b>keinem Gerät zugewiesen</b>. Du kannst sie als Beobachter an einem Aktor-Kanal eintragen.</p>',
+        '      <p v-else-if="searchHint && !searchHint.found" style="color: var(--muted); font-size: 0.9rem">Diese ID wurde auch nicht im Live-Log empfangen.</p>',
+        '    </template>',
         '  </div>',
         '</div>',
         '<div class="card" v-else style="padding: 0">',
@@ -2024,7 +2111,9 @@ const TabDevices = {
         '      <template v-for="d in filtered" :key="d.device_id">',
         '        <tr @click="toggle(d.device_id)" style="cursor:pointer">',
         '          <td>{{ expanded.has(d.device_id) ? "▾" : "▸" }}</td>',
-        '          <td><strong>{{ d.name }}</strong></td>',
+        '          <td><strong>{{ d.name }}</strong>',
+        '            <span v-for="r in matchReasons(d, compactId(filter))" :key="r" class="tag" style="margin-left: 0.35rem; font-size: 0.7rem">{{ r }}</span>',
+        '          </td>',
         '          <td>{{ d.manufacturer }} {{ d.model }}</td>',
         '          <td>{{ d.room }}</td>',
         '          <td>{{ (d.channels || []).length }}</td>',
@@ -3330,6 +3419,7 @@ const TabSettings = {
             base_topic: "enocean", qos: 1, retain_state: true,
         });
         const ptmOnPress = ref("I");
+        const energyMaxJump = ref(1000);
         const loading = ref(true);
         const saving = ref(false);
 
@@ -3339,6 +3429,8 @@ const TabSettings = {
                 const c = await api.get("/api/config");
                 Object.assign(mqtt, c.mqtt || {});
                 ptmOnPress.value = (c.defaults && c.defaults.ptm_on_press) || "I";
+                energyMaxJump.value = (c.defaults && c.defaults.energy_max_jump_kwh != null)
+                    ? c.defaults.energy_max_jump_kwh : 1000;
             } catch (e) {
                 toast("Einstellungen laden fehlgeschlagen: " + e.message, "error");
             } finally {
@@ -3358,7 +3450,10 @@ const TabSettings = {
                         qos: Number(mqtt.qos),
                         retain_state: !!mqtt.retain_state,
                     },
-                    defaults: { ptm_on_press: ptmOnPress.value },
+                    defaults: {
+                        ptm_on_press: ptmOnPress.value,
+                        energy_max_jump_kwh: Number(energyMaxJump.value) || 0,
+                    },
                 });
                 toast("Gespeichert" + (r.mqtt_reconnected ? " · MQTT neu verbunden" : ""), "success");
             } catch (e) {
@@ -3368,7 +3463,7 @@ const TabSettings = {
             }
         }
         onMounted(load);
-        return { mqtt, ptmOnPress, loading, saving, save, load };
+        return { mqtt, ptmOnPress, energyMaxJump, loading, saving, save, load };
     },
     template: [
         '<div>',
@@ -3402,6 +3497,11 @@ const TabSettings = {
         '      <div style="font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem">Welche Wippen-Hälfte schaltet EIN? Gilt als Standard für alle Funktaster. Einzelne Schalter lassen sich im Geräte-Edit-Dialog abweichend einstellen.</div>',
         '      <label style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.3rem; cursor: pointer"><input type="radio" value="I" v-model="ptmOnPress"> <b>oben</b> schaltet EIN — Eltako-Standard</label>',
         '      <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer"><input type="radio" value="0" v-model="ptmOnPress"> <b>unten</b> schaltet EIN</label>',
+        '    </div>',
+        '    <div class="card" style="padding: 1rem; margin-bottom: 1rem; max-width: 640px">',
+        '      <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem">Energiezähler-Ausreißerschutz (global)</h3>',
+        '      <div style="font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem">Größter plausibler Sprung eines Zählerstands zwischen zwei Telegrammen. Größere Sprünge nach oben gelten als Funk-/Bus-Störung und werden verworfen — so kann ein einzelner Fehlwert den Zählerstand nicht dauerhaft „nach oben festhängen". 0 = Schutz aus.</div>',
+        '      <label style="display: flex; align-items: center; gap: 0.4rem"><input type="number" class="input" style="max-width: 9rem" min="0" step="100" v-model="energyMaxJump"> <span style="color: var(--muted)">kWh</span></label>',
         '    </div>',
         '    <button class="btn btn-primary" :disabled="saving" @click="save">{{ saving ? "Speichert …" : "Speichern" }}</button>',
         '  </template>',
