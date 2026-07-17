@@ -36,3 +36,7 @@ enocean2mqtt-source.tar.gz
 deploy-backups/
 *.s3db
 *.lic
+
+# Lokale Wissensbasis (get-knowledge) — kann haus-/geraetespezifische Daten
+# (echte EnOcean-IDs etc.) enthalten, gehoert nicht ins oeffentliche Repo
+ressources/
