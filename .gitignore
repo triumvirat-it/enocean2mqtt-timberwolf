@@ -40,3 +40,6 @@ deploy-backups/
 # Lokale Wissensbasis (get-knowledge) — kann haus-/geraetespezifische Daten
 # (echte EnOcean-IDs etc.) enthalten, gehoert nicht ins oeffentliche Repo
 ressources/
+
+# Lokales Arbeits-Logbuch — lokal fuehren, nicht ins oeffentliche Repo
+HISTORY.md
