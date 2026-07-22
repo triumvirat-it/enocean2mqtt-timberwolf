@@ -24,6 +24,7 @@ Routen:
 from __future__ import annotations
 
 import asyncio
+import gzip
 import json
 import logging
 import time
@@ -760,6 +761,10 @@ def create_app(srv: WebUIServer) -> FastAPI:
             "defaults": {
                 "ptm_on_press": srv.cfg.defaults.ptm_on_press,
                 "energy_max_jump_kwh": srv.cfg.defaults.energy_max_jump_kwh,
+                "power_max_w": srv.cfg.defaults.power_max_w,
+                "flow_max_m3h": srv.cfg.defaults.flow_max_m3h,
+                "flow_max_l_min": srv.cfg.defaults.flow_max_l_min,
+                "telegram_audit_enabled": srv.cfg.defaults.telegram_audit_enabled,
             },
         }
 
@@ -791,15 +796,24 @@ def create_app(srv: WebUIServer) -> FastAPI:
                 if val not in ("I", "0"):
                     raise HTTPException(422, "ptm_on_press muss 'I' oder '0' sein")
                 srv.cfg.defaults.ptm_on_press = val
-            mj = payload.defaults.get("energy_max_jump_kwh")
-            if mj is not None:
+            # Numerische Obergrenzen (>= 0, 0 = Schutz aus). Gleiches Muster
+            # fuer den Energie-Sprung + die drei Momentan-/Durchfluss-Grenzen.
+            for _key in ("energy_max_jump_kwh", "power_max_w",
+                         "flow_max_m3h", "flow_max_l_min"):
+                _raw = payload.defaults.get(_key)
+                if _raw is None:
+                    continue
                 try:
-                    mj = float(mj)
+                    _num = float(_raw)
                 except (TypeError, ValueError):
-                    raise HTTPException(422, "energy_max_jump_kwh muss eine Zahl sein")
-                if mj < 0:
-                    raise HTTPException(422, "energy_max_jump_kwh darf nicht negativ sein")
-                srv.cfg.defaults.energy_max_jump_kwh = mj
+                    raise HTTPException(422, f"{_key} muss eine Zahl sein")
+                if _num < 0:
+                    raise HTTPException(422, f"{_key} darf nicht negativ sein")
+                setattr(srv.cfg.defaults, _key, _num)
+
+            ta = payload.defaults.get("telegram_audit_enabled")
+            if ta is not None:
+                srv.cfg.defaults.telegram_audit_enabled = bool(ta)
 
         srv.cfg.save(srv.config_dir)
 
@@ -1858,6 +1872,67 @@ def create_app(srv: WebUIServer) -> FastAPI:
     @app.get("/api/log/recent")
     async def recent_log(limit: int = 50) -> list[dict]:
         return srv.log_buffer.recent(limit=limit)
+
+    @app.get("/api/energy-audit")
+    async def energy_audit(lines: int = 200) -> dict:
+        """Letzte N Zeilen der Energiezaehler-Mitschrift (energy_audit.log).
+        Damit laesst sich ein "Zaehler steht auf Null / haengt fest"-Vorfall
+        direkt im Browser nachvollziehen — ohne Portainer-Console. Read-only.
+        Ueberlebt Neustarts (liegt im Named Volume, rotierend)."""
+        path = srv.config_dir / "energy_audit.log"
+        if not path.exists():
+            return {"path": str(path), "lines": [], "note":
+                    "Noch keine Zaehler-Telegramme protokolliert."}
+        try:
+            with path.open("r", encoding="utf-8", errors="replace") as f:
+                all_lines = f.read().splitlines()
+        except OSError as exc:
+            return {"path": str(path), "lines": [], "note": f"Lesefehler: {exc}"}
+        n = max(1, min(lines, 5000))
+        return {"path": str(path), "total": len(all_lines),
+                "lines": all_lines[-n:]}
+
+    @app.get("/api/telegram-audit")
+    async def telegram_audit(lines: int = 300, day: str | None = None) -> dict:
+        """Voll-Mitschnitt ALLER Telegramme (telegram_audit.log, im Named Volume,
+        taeglich rotierend + gzip-Archiv, ~6 Wochen). Damit ein spaeter
+        auffallender unplausibler Wert bis zum ausloesenden Roh-Telegramm
+        zurueckverfolgbar ist. Read-only.
+
+        Ohne Parameter: letzte N Zeilen des AKTIVEN Tages + Liste der Archiv-Tage.
+        Mit day=YYYY-MM-DD: letzte N Zeilen aus diesem Archiv-Tag."""
+        cd = srv.config_dir
+        base = cd / "telegram_audit.log"
+        prefix, suffix = "telegram_audit.", ".log.gz"
+        archives = sorted(
+            (p.name[len(prefix):-len(suffix)] for p in cd.glob(f"{prefix}*{suffix}")),
+            reverse=True,
+        )
+        n = max(1, min(lines, 20000))
+        if day:
+            gz = cd / f"{prefix}{day}{suffix}"
+            if not gz.exists():
+                return {"day": day, "lines": [], "archives": archives,
+                        "note": "Kein Archiv fuer diesen Tag."}
+            try:
+                with gzip.open(gz, "rt", encoding="utf-8", errors="replace") as f:
+                    all_lines = f.read().splitlines()
+            except OSError as exc:
+                return {"day": day, "lines": [], "archives": archives,
+                        "note": f"Lesefehler: {exc}"}
+            return {"day": day, "total": len(all_lines),
+                    "lines": all_lines[-n:], "archives": archives}
+        if not base.exists():
+            return {"path": str(base), "lines": [], "archives": archives,
+                    "note": "Noch keine Telegramme protokolliert."}
+        try:
+            with base.open("r", encoding="utf-8", errors="replace") as f:
+                all_lines = f.read().splitlines()
+        except OSError as exc:
+            return {"path": str(base), "lines": [], "archives": archives,
+                    "note": f"Lesefehler: {exc}"}
+        return {"path": str(base), "total": len(all_lines),
+                "lines": all_lines[-n:], "archives": archives}
 
     @app.get("/api/diagnostics")
     async def diagnostics() -> dict:

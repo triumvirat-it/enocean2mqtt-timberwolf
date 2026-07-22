@@ -3420,6 +3420,10 @@ const TabSettings = {
         });
         const ptmOnPress = ref("I");
         const energyMaxJump = ref(1000);
+        const powerMaxW = ref(50000);
+        const flowMaxM3h = ref(100);
+        const flowMaxLMin = ref(1000);
+        const telegramAudit = ref(true);
         const loading = ref(true);
         const saving = ref(false);
 
@@ -3428,9 +3432,13 @@ const TabSettings = {
             try {
                 const c = await api.get("/api/config");
                 Object.assign(mqtt, c.mqtt || {});
-                ptmOnPress.value = (c.defaults && c.defaults.ptm_on_press) || "I";
-                energyMaxJump.value = (c.defaults && c.defaults.energy_max_jump_kwh != null)
-                    ? c.defaults.energy_max_jump_kwh : 1000;
+                const d = c.defaults || {};
+                ptmOnPress.value = d.ptm_on_press || "I";
+                energyMaxJump.value = d.energy_max_jump_kwh != null ? d.energy_max_jump_kwh : 1000;
+                powerMaxW.value = d.power_max_w != null ? d.power_max_w : 50000;
+                flowMaxM3h.value = d.flow_max_m3h != null ? d.flow_max_m3h : 100;
+                flowMaxLMin.value = d.flow_max_l_min != null ? d.flow_max_l_min : 1000;
+                telegramAudit.value = d.telegram_audit_enabled !== false;
             } catch (e) {
                 toast("Einstellungen laden fehlgeschlagen: " + e.message, "error");
             } finally {
@@ -3453,6 +3461,10 @@ const TabSettings = {
                     defaults: {
                         ptm_on_press: ptmOnPress.value,
                         energy_max_jump_kwh: Number(energyMaxJump.value) || 0,
+                        power_max_w: Number(powerMaxW.value) || 0,
+                        flow_max_m3h: Number(flowMaxM3h.value) || 0,
+                        flow_max_l_min: Number(flowMaxLMin.value) || 0,
+                        telegram_audit_enabled: !!telegramAudit.value,
                     },
                 });
                 toast("Gespeichert" + (r.mqtt_reconnected ? " · MQTT neu verbunden" : ""), "success");
@@ -3463,7 +3475,8 @@ const TabSettings = {
             }
         }
         onMounted(load);
-        return { mqtt, ptmOnPress, energyMaxJump, loading, saving, save, load };
+        return { mqtt, ptmOnPress, energyMaxJump, powerMaxW, flowMaxM3h,
+                 flowMaxLMin, telegramAudit, loading, saving, save, load };
     },
     template: [
         '<div>',
@@ -3502,6 +3515,23 @@ const TabSettings = {
         '      <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem">Energiezähler-Ausreißerschutz (global)</h3>',
         '      <div style="font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem">Größter plausibler Sprung eines Zählerstands zwischen zwei Telegrammen. Größere Sprünge nach oben gelten als Funk-/Bus-Störung und werden verworfen — so kann ein einzelner Fehlwert den Zählerstand nicht dauerhaft „nach oben festhängen". 0 = Schutz aus.</div>',
         '      <label style="display: flex; align-items: center; gap: 0.4rem"><input type="number" class="input" style="max-width: 9rem" min="0" step="100" v-model="energyMaxJump"> <span style="color: var(--muted)">kWh</span></label>',
+        '    </div>',
+        '    <div class="card" style="padding: 1rem; margin-bottom: 1rem; max-width: 640px">',
+        '      <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem">Momentanwert-/Durchfluss-Ausreißerschutz (global)</h3>',
+        '      <div style="font-size: 0.78rem; color: var(--muted); margin-bottom: 0.7rem">Obergrenzen für Momentan-/Durchflusswerte (Leistung, Gas, Wasser). Ein einzelnes gestörtes Funktelegramm (z.B. Gas-Durchfluss 524288) würde sonst im Anzeigefeld „einfrieren", weil solche Werte selten kommen und nie überschrieben werden. Werte darüber werden verworfen — das auslösende Roh-Telegramm bleibt im Telegramm-Protokoll sichtbar. 0 = Schutz aus.</div>',
+        '      <div style="display: grid; grid-template-columns: 12rem 1fr; gap: 0.5rem 0.7rem; align-items: center">',
+        '        <label style="font-size: 0.82rem">Max. Leistung</label>',
+        '        <label style="display: flex; align-items: center; gap: 0.4rem"><input type="number" class="input" style="max-width: 9rem" min="0" step="1000" v-model="powerMaxW"> <span style="color: var(--muted)">W</span></label>',
+        '        <label style="font-size: 0.82rem">Max. Gas-Durchfluss</label>',
+        '        <label style="display: flex; align-items: center; gap: 0.4rem"><input type="number" class="input" style="max-width: 9rem" min="0" step="10" v-model="flowMaxM3h"> <span style="color: var(--muted)">m³/h</span></label>',
+        '        <label style="font-size: 0.82rem">Max. Wasser-Durchfluss</label>',
+        '        <label style="display: flex; align-items: center; gap: 0.4rem"><input type="number" class="input" style="max-width: 9rem" min="0" step="50" v-model="flowMaxLMin"> <span style="color: var(--muted)">L/min</span></label>',
+        '      </div>',
+        '    </div>',
+        '    <div class="card" style="padding: 1rem; margin-bottom: 1rem; max-width: 640px">',
+        '      <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem">Telegramm-Voll-Protokoll</h3>',
+        '      <div style="font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem">Schreibt ALLE empfangenen Telegramme mit Roh-Payload dauerhaft nach <code>telegram_audit.log</code> (täglich rotierend, ~6 Wochen). Damit lässt sich ein später auffallender Fehlwert bis zum auslösenden Telegramm zurückverfolgen. Änderung wirkt nach dem nächsten Neustart.</div>',
+        '      <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer"><input type="checkbox" v-model="telegramAudit"> Voll-Protokoll aktiv</label>',
         '    </div>',
         '    <button class="btn btn-primary" :disabled="saving" @click="save">{{ saving ? "Speichert …" : "Speichern" }}</button>',
         '  </template>',

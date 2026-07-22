@@ -88,6 +88,31 @@ class DefaultsConfig(BaseModel):
         "Funk-/Bus-Stoerung und werden verworfen (sonst wuerde ein einzelner "
         "Ausreisser den Monotonie-Filter dauerhaft 'vergiften'). 0 = aus.",
     )
+    power_max_w: float = Field(
+        50000.0,
+        description="Obergrenze fuer Momentanleistung (current_w) in Watt. "
+        "Hoehere Werte gelten als Funk-/Bus-Stoerung und werden verworfen, "
+        "statt im UI-Feld-Cache einzufrieren. Grosszuegig fuer dicke Verbraucher "
+        "(Waermepumpe, Elektrolyse). 0 = aus.",
+    )
+    flow_max_m3h: float = Field(
+        100.0,
+        description="Obergrenze fuer Gas-Durchfluss (flow_m3h) in m^3/h. "
+        "Groessere Werte gelten als Stoerung und werden verworfen. 0 = aus.",
+    )
+    flow_max_l_min: float = Field(
+        1000.0,
+        description="Obergrenze fuer Wasser-Durchfluss (flow_l_min) in L/min. "
+        "Groessere Werte gelten als Stoerung und werden verworfen. 0 = aus.",
+    )
+    telegram_audit_enabled: bool = Field(
+        True,
+        description="Voll-Mitschnitt ALLER empfangenen Telegramme nach "
+        "telegram_audit.log (im Named Volume, taeglich rotierend, gzip-Archiv, "
+        "~6 Wochen Aufbewahrung). Fuer die nachtraegliche Fehlersuche bei "
+        "unplausiblen Werten, deren ausloesendes Telegramm sonst laengst aus "
+        "dem RAM-Live-Log gerollt ist. false = aus.",
+    )
 
 
 class AppConfig(BaseModel):

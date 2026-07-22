@@ -21,6 +21,7 @@ from .mqtt_client import MQTTPublisher
 from .observed_senders import ObservedSenderRegistry
 from .pipeline import TelegramPipeline
 from .products import ProductDB
+from .telegram_audit import TelegramAuditWriter
 from .tx_router import TXRouter
 from .webui import WebUIServer
 
@@ -36,10 +37,33 @@ def setup_logging(level: str) -> None:
     )
 
 
+def setup_energy_audit(config_dir: Path) -> None:
+    """Dedizierte Energiezaehler-Mitschrift nach CONFIG_DIR/energy_audit.log.
+    Haelt pro kWh-Telegramm fest, welcher Rohwert kam und ob der Monotonie-
+    Filter ihn uebernahm oder verwarf — damit ein "Zaehler steht auf Null /
+    haengt fest"-Vorfall im Nachhinein exakt nachvollziehbar ist. Rotierend
+    (4x 512 KB), damit die knappe Disk am Timberwolf nicht volllaeuft; laeuft
+    getrennt vom stdout-Log (propagate=False), um es nicht zuzuspammen."""
+    from logging.handlers import RotatingFileHandler
+
+    logger = logging.getLogger("energy_audit")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    handler = RotatingFileHandler(
+        config_dir / "energy_audit.log",
+        maxBytes=512_000, backupCount=3, encoding="utf-8",
+    )
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    )
+    logger.addHandler(handler)
+
+
 async def amain() -> int:
     config_dir = Path(os.environ.get("CONFIG_DIR", "/data"))
     cfg = AppConfig.load(config_dir)
     setup_logging(os.environ.get("LOG_LEVEL", cfg.log_level))
+    setup_energy_audit(config_dir)
 
     log.info(
         "enocean2mqtt_timberwolf startet — %d Gateway(s), MQTT %s:%d",
@@ -96,6 +120,15 @@ async def amain() -> int:
     pipeline.observed_senders = observed_senders
     pipeline._gateway_configs = cfg.gateways
     pipeline.defaults = cfg.defaults
+    # Voll-Mitschnitt aller Telegramme nach CONFIG_DIR/telegram_audit.log
+    # (persistent im Named Volume, taeglich rotierend + gzip). Damit ein spaeter
+    # auffallender unplausibler Wert bis zum ausloesenden Roh-Telegramm
+    # zurueckverfolgbar ist — der RAM-Live-Log (500 Eintraege) reicht dafuer nicht.
+    telegram_audit = TelegramAuditWriter(
+        config_dir / "telegram_audit.log",
+        enabled=cfg.defaults.telegram_audit_enabled,
+    )
+    pipeline.telegram_audit = telegram_audit
     tx_router = TXRouter(cfg, manager, devices, cascade, state_store=state_store)
     # M69: dim_speed wird beim Senden in channel.meta persistiert
     tx_router.devices_save_path = config_dir / "devices.yaml"
@@ -140,6 +173,7 @@ async def amain() -> int:
         with suppress(NotImplementedError):
             loop.add_signal_handler(sig, stop_event.set)
 
+    await telegram_audit.start()
     await publisher.start()
     await publisher.wait_connected(timeout=15.0)
     await manager.start()
@@ -164,6 +198,7 @@ async def amain() -> int:
         await pipeline.stop()
         await manager.stop()
         await publisher.stop()
+        await telegram_audit.stop()
 
     return 0
 

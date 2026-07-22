@@ -18,6 +18,28 @@ from .tx_router import classify_channel_kind, ptm_press_is_on
 
 log = logging.getLogger(__name__)
 
+# Dedizierter Audit-Logger fuer Energiezaehler-Telegramme (energy_kwh).
+# main.py haengt per setup_energy_audit() einen RotatingFileHandler auf
+# CONFIG_DIR/energy_audit.log. Zweck: nach einem "Zaehler steht auf Null /
+# haengt fest"-Vorfall laesst sich exakt rekonstruieren, welche Rohwerte
+# reinkamen und welche Entscheidung der Monotonie-Filter je Telegramm traf.
+# Ohne konfigurierten Handler (z.B. in Tests) verpufft die Ausgabe im
+# NullHandler — propagate bleibt an, damit pytest-caplog sie sehen kann.
+audit = logging.getLogger("energy_audit")
+audit.addHandler(logging.NullHandler())
+
+
+def _audit_energy(sender, tariff, gw, rssi, new_val, last_val,
+                  decision, detail=""):
+    """Eine Zeile pro kWh-Telegramm ins Audit-Protokoll: Rohwert, letzter
+    Cache-Stand und die getroffene Entscheidung (UEBERNOMMEN/VERWORFEN)."""
+    audit.info(
+        "%s t%s gw=%s rssi=%sdBm raw=%s last=%s -> %s%s",
+        sender, tariff, gw, rssi, new_val,
+        "-" if last_val is None else f"{last_val:.2f}",
+        decision, f" ({detail})" if detail else "",
+    )
+
 
 _INVERT_STATE_MAP = {
     "moving_up": "moving_down",
@@ -156,6 +178,9 @@ class TelegramPipeline:
         # Globale Defaults (cfg.defaults) — fuer ptm_on_press-Polung beim
         # Ableiten des PTM-Schaltzustands. Von main.py injiziert.
         self.defaults = None
+        # Voll-Mitschnitt aller Telegramme (TelegramAuditWriter) — von main.py
+        # injiziert. Wenn None: kein Mitschnitt (z.B. in Tests).
+        self.telegram_audit = None
 
     @property
     def unknown_senders(self) -> set[str]:
@@ -343,6 +368,13 @@ class TelegramPipeline:
             if "high" in sn and "low" in sn:
                 decoded["serial_number"] = f"S-{sn['high']}{sn['low']}"
 
+        # Voll-Mitschnitt: JEDES dekodierte Telegramm ins telegram_audit.log,
+        # BEVOR der Energie-Filter unten unplausible Werte per return verwirft —
+        # sonst fehlt im Protokoll genau der Ausreisser, den man spaeter sucht.
+        if self.telegram_audit is not None:
+            dev_name = matches[0][1].name if matches else None
+            self.telegram_audit.record(rx, decoded, device_name=dev_name)
+
         # STRENGE Monotonie-Pruefung fuer energy_kwh.
         # Hintergrund: HomeAssistant-Tageszaehler-Statistiken berechnen den
         # Tagesverbrauch als Differenz zwischen aktuellem Zaehlerstand und dem
@@ -375,14 +407,28 @@ class TelegramPipeline:
                     # Erstmessung: 0-Werte sind verdaechtig (Sub-Tarif inaktiv,
                     # Init-Reset) — verwerfen, bis ein echter Wert kommt.
                     if new_val < 0.001:
+                        _audit_energy(
+                            sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
+                            new_val, last_val, "VERWORFEN",
+                            "Erstwert 0 (vermutlich inaktiver Sub-Tarif)",
+                        )
                         log.info(
                             "Erste energy_kwh=%s verworfen (vermutlich "
                             "inaktiver Sub-Tarif): %s tariff=%s",
                             new_val, sender_hex, tariff,
                         )
                         return
+                    _audit_energy(
+                        sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
+                        new_val, last_val, "UEBERNOMMEN", "Erstwert",
+                    )
                     self._monotonic_cache[cache_key] = float(new_val)
                 elif new_val < last_val:
+                    _audit_energy(
+                        sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
+                        new_val, last_val, "VERWORFEN",
+                        "Monotonie verletzt (unter letztem Stand)",
+                    )
                     log.warning(
                         "Monotonie verletzt — verworfen: %s tariff=%s "
                         "energy_kwh %.2f -> %.2f (Zaehlerstand laeuft nie zurueck)",
@@ -391,6 +437,11 @@ class TelegramPipeline:
                     return
                 elif max_jump and (new_val - last_val) > max_jump:
                     # Sprung nach oben zu gross — Ausreisser, NICHT cachen.
+                    _audit_energy(
+                        sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
+                        new_val, last_val, "VERWORFEN",
+                        f"Sprung +{new_val - last_val:.2f} > max {max_jump:.0f} kWh",
+                    )
                     log.warning(
                         "Unplausibler energy_kwh-Sprung verworfen: %s tariff=%s "
                         "%.2f -> %.2f (+%.2f > max %.2f kWh) — vermutlich "
@@ -400,7 +451,46 @@ class TelegramPipeline:
                     )
                     return
                 else:
+                    _audit_energy(
+                        sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
+                        new_val, last_val, "UEBERNOMMEN",
+                        f"Anstieg +{new_val - last_val:.2f} kWh plausibel",
+                    )
                     self._monotonic_cache[cache_key] = float(new_val)
+            else:
+                # Nicht-numerischer energy_kwh (sollte nicht vorkommen) — trotzdem
+                # protokollieren, damit wir Decoder-Ausreisser sehen.
+                _audit_energy(
+                    sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
+                    new_val, last_val, "DURCHGELASSEN", "nicht-numerischer Wert",
+                )
+
+        # Plausibilitaets-Guard fuer Momentan-/Durchfluss-Werte (current_w,
+        # flow_m3h, flow_l_min). Anders als energy_kwh sind das keine monoton
+        # steigenden Zaehlerstaende — hier hilft nur eine Obergrenze. Ein
+        # einzelnes gestoertes Funktelegramm (z.B. Gas raw=0800000C ->
+        # flow_m3h=524288 = 0x080000) friert sonst im UI-Feld-Cache ein: solche
+        # Telegramme kommen selten, der Ausreisser wird nie ueberschrieben.
+        # Wir loeschen NUR das betroffene Feld (nicht das ganze Telegramm) —
+        # das ausloesende Roh-Telegramm steht ohnehin schon im telegram_audit.log
+        # (dort wird VOR diesem Guard protokolliert), plus eine Warnung mit
+        # Roh-Payload hier, damit die Grenze bei Bedarf nachgeschaerft werden kann.
+        _flow_limits = {
+            "current_w":  getattr(self.defaults, "power_max_w", 50000.0),
+            "flow_m3h":   getattr(self.defaults, "flow_max_m3h", 100.0),
+            "flow_l_min": getattr(self.defaults, "flow_max_l_min", 1000.0),
+        }
+        for _fld, _limit in _flow_limits.items():
+            _val = decoded.get(_fld)
+            if _limit and isinstance(_val, (int, float)) and _val > _limit:
+                log.warning(
+                    "Unplausibler %s verworfen: %s = %s > max %s "
+                    "(gw=%s rssi=%s raw=%s) — vermutlich Funkstoerung. "
+                    "Roh-Telegramm siehe telegram_audit.log.",
+                    _fld, sender_hex, _val, _limit,
+                    rx.gateway_name, tel.rssi_dbm, tel.payload.hex().upper(),
+                )
+                del decoded[_fld]
 
         common = {
             "ts": round(rx.received_at, 3),
