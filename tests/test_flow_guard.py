@@ -88,9 +88,31 @@ def test_plausibler_flow_kommt_durch():
 
 
 def test_guard_aus_bei_null_grenze():
+    # Obergrenze aus (0) -> ein zu hoher, aber byte-sauberer Wert (DB3=0x00,
+    # d.h. <= 65535) kommt durch. 200 m^3/h liegt ueber der Default-Grenze 100,
+    # hat aber DB3=0x00, wird also vom DB3-Check nicht angefasst.
     pipe, pub = _pipeline(DefaultsConfig(flow_max_m3h=0))  # Schutz aus
-    asyncio.run(pipe._process(_rx(524288)))
-    assert 524288.0 in _published_flow(pub)
+    asyncio.run(pipe._process(_rx(200)))
+    assert 200.0 in _published_flow(pub)
+
+
+def test_db3_bitfehler_wird_auch_bei_grenze_aus_verworfen():
+    """Der byte-genaue DB3-Check ist ein eigener Detektor: ein gesetztes Bit im
+    obersten Datenbyte (raw 0800000C -> DB3=0x08) ist ein Bit-Fehler und wird
+    verworfen, auch wenn die Magnitude-Obergrenze abgeschaltet ist."""
+    pipe, pub = _pipeline(DefaultsConfig(flow_max_m3h=0))  # Magnitude aus
+    asyncio.run(pipe._process(_rx(524288)))                # 0x080000, DB3=0x08
+    assert _published_flow(pub) == []
+
+
+def test_db3_kleiner_kipper_unter_wattgrenze_wird_verworfen():
+    """+65536-Injektion: echte Last klein, aber DB3 gesetzt. Der Wert (66115)
+    liegt hier zwar ueber der Gas-Grenze, aber der Punkt ist: der DB3-Check
+    greift byte-genau, unabhaengig von der Hoehe."""
+    pipe, pub = _pipeline()
+    # 0x010243 = 66115: DB3=0x01 (Bitfehler), echte Last 0x000243 = 579
+    asyncio.run(pipe._process(_rx(0x010243)))
+    assert _published_flow(pub) == []
 
 
 def test_raw_telegramm_bleibt_trotz_verwurf_sichtbar():

@@ -181,10 +181,27 @@ class TelegramPipeline:
         # Voll-Mitschnitt aller Telegramme (TelegramAuditWriter) — von main.py
         # injiziert. Wenn None: kein Mitschnitt (z.B. in Tests).
         self.telegram_audit = None
+        # Verwurf-Protokoll (RejectAuditWriter) — jede verworfene Entscheidung
+        # mit Grund. Von main.py injiziert; None in Tests ohne Protokoll.
+        self.reject_audit = None
 
     @property
     def unknown_senders(self) -> set[str]:
         return self._unknown_seen
+
+    def _reject_log(self, rx, field, value, reason,
+                    eep=None, detail="", last_good=None) -> None:
+        """Verwurf ins reject_audit.log (falls verdrahtet). Best-effort —
+        darf den Empfang nie stoeren."""
+        if self.reject_audit is None:
+            return
+        try:
+            self.reject_audit.record(
+                rx, field, value, reason,
+                eep=eep, detail=detail, last_good=last_good,
+            )
+        except Exception:  # noqa: BLE001
+            pass
 
     async def start(self) -> None:
         self._task = asyncio.create_task(self._run(), name="pipeline")
@@ -417,6 +434,11 @@ class TelegramPipeline:
                             "inaktiver Sub-Tarif): %s tariff=%s",
                             new_val, sender_hex, tariff,
                         )
+                        self._reject_log(
+                            rx, "energy_kwh", new_val, "energy_first_zero",
+                            eep=decoded.get("_eep"), last_good=last_val,
+                            detail=f"tariff={tariff}",
+                        )
                         return
                     _audit_energy(
                         sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
@@ -434,6 +456,11 @@ class TelegramPipeline:
                         "energy_kwh %.2f -> %.2f (Zaehlerstand laeuft nie zurueck)",
                         sender_hex, tariff, last_val, new_val,
                     )
+                    self._reject_log(
+                        rx, "energy_kwh", new_val, "energy_monotonie",
+                        eep=decoded.get("_eep"), last_good=last_val,
+                        detail=f"tariff={tariff}",
+                    )
                     return
                 elif max_jump and (new_val - last_val) > max_jump:
                     # Sprung nach oben zu gross — Ausreisser, NICHT cachen.
@@ -448,6 +475,11 @@ class TelegramPipeline:
                         "Funk-/Bus-Stoerung, Cache bleibt bei %.2f",
                         sender_hex, tariff, last_val, new_val,
                         new_val - last_val, max_jump, last_val,
+                    )
+                    self._reject_log(
+                        rx, "energy_kwh", new_val, "energy_jump",
+                        eep=decoded.get("_eep"), last_good=last_val,
+                        detail=f"tariff={tariff} max_jump={max_jump:.0f}",
                     )
                     return
                 else:
@@ -467,14 +499,27 @@ class TelegramPipeline:
 
         # Plausibilitaets-Guard fuer Momentan-/Durchfluss-Werte (current_w,
         # flow_m3h, flow_l_min). Anders als energy_kwh sind das keine monoton
-        # steigenden Zaehlerstaende — hier hilft nur eine Obergrenze. Ein
-        # einzelnes gestoertes Funktelegramm (z.B. Gas raw=0800000C ->
-        # flow_m3h=524288 = 0x080000) friert sonst im UI-Feld-Cache ein: solche
-        # Telegramme kommen selten, der Ausreisser wird nie ueberschrieben.
-        # Wir loeschen NUR das betroffene Feld (nicht das ganze Telegramm) —
-        # das ausloesende Roh-Telegramm steht ohnehin schon im telegram_audit.log
-        # (dort wird VOR diesem Guard protokolliert), plus eine Warnung mit
-        # Roh-Payload hier, damit die Grenze bei Bedarf nachgeschaerft werden kann.
+        # steigenden Zaehlerstaende — hier hilft nur eine Plausibilitaetspruefung.
+        #
+        # ZWEI Detektoren, beide verwerfen NUR das betroffene Feld (nicht das
+        # ganze Telegramm); das Roh-Telegramm steht ohnehin schon im
+        # telegram_audit.log (dort VOR diesem Guard protokolliert). Jeder Verwurf
+        # geht zusaetzlich mit Grund ins reject_audit.log.
+        #
+        # 1) DB3-Byte-Check (byte-genau): Bei A5-12-Momentan-/Durchfluss-
+        #    telegrammen (DB0=0x0C) ist der echte Wert klein — er passt in die
+        #    unteren zwei Datenbytes, das oberste Datenbyte DB3 (= payload[0])
+        #    ist IMMER 0x00. Ein gesetztes Bit dort ist ein sender-/busseitiger
+        #    Bitfehler des Eltako-Zaehlers/FAM14 ("echte Last + n*65536"; die
+        #    ESP3-CRC passt, weil der Fehler vor der CRC-Bildung im FAM14
+        #    entsteht). Faengt auch die kleinen Injektionen (+65536), die unter
+        #    der Wattgrenze blieben. Annahme: Haushalt, Momentanlast < 65 kW.
+        # 2) Obergrenze (Magnitude): faengt grobe Stoerungen, die zufaellig
+        #    DB3=0x00 lassen, aber DB2/DB1 verfaelschen (raw 0800000C wuerde
+        #    z.B. schon von (1) gefangen; 00xxxx-Faelle > Grenze von (2)).
+        _eep = decoded.get("_eep") or ""
+        _is_a5_12 = _eep.startswith("A5-12")
+        _db3 = tel.payload[0] if len(tel.payload) >= 4 else 0
         _flow_limits = {
             "current_w":  getattr(self.defaults, "power_max_w", 50000.0),
             "flow_m3h":   getattr(self.defaults, "flow_max_m3h", 100.0),
@@ -482,13 +527,26 @@ class TelegramPipeline:
         }
         for _fld, _limit in _flow_limits.items():
             _val = decoded.get(_fld)
-            if _limit and isinstance(_val, (int, float)) and _val > _limit:
+            if not isinstance(_val, (int, float)):
+                continue
+            _reason = None
+            if _is_a5_12 and _db3 != 0x00:
+                _reason = "db3_nonzero"
+            elif _limit and _val > _limit:
+                _reason = f"over_max_{_fld}"
+            if _reason:
                 log.warning(
-                    "Unplausibler %s verworfen: %s = %s > max %s "
-                    "(gw=%s rssi=%s raw=%s) — vermutlich Funkstoerung. "
+                    "Unplausibler %s verworfen (%s): %s = %s "
+                    "(gw=%s rssi=%s raw=%s) — vermutlich Bit-/Busstoerung. "
                     "Roh-Telegramm siehe telegram_audit.log.",
-                    _fld, sender_hex, _val, _limit,
+                    _fld, _reason, sender_hex, _val,
                     rx.gateway_name, tel.rssi_dbm, tel.payload.hex().upper(),
+                )
+                self._reject_log(
+                    rx, _fld, _val, _reason,
+                    eep=decoded.get("_eep"),
+                    detail=(f"DB3=0x{_db3:02X}" if _reason == "db3_nonzero"
+                            else f"DB3=0x{_db3:02X} limit={_limit}"),
                 )
                 del decoded[_fld]
 

@@ -22,6 +22,7 @@ from .observed_senders import ObservedSenderRegistry
 from .pipeline import TelegramPipeline
 from .products import ProductDB
 from .telegram_audit import TelegramAuditWriter
+from .reject_audit import RejectAuditWriter
 from .tx_router import TXRouter
 from .webui import WebUIServer
 
@@ -129,6 +130,11 @@ async def amain() -> int:
         enabled=cfg.defaults.telegram_audit_enabled,
     )
     pipeline.telegram_audit = telegram_audit
+    # Verwurf-Protokoll: JEDES verworfene Telegramm/Feld mit Grund nach
+    # CONFIG_DIR/reject_audit.log. Dauerhaft AN (kein Schalter) — genau das
+    # wochenlange Mitschreiben ist der Zweck; Fussabdruck ist winzig.
+    reject_audit = RejectAuditWriter(config_dir / "reject_audit.log")
+    pipeline.reject_audit = reject_audit
     tx_router = TXRouter(cfg, manager, devices, cascade, state_store=state_store)
     # M69: dim_speed wird beim Senden in channel.meta persistiert
     tx_router.devices_save_path = config_dir / "devices.yaml"
@@ -174,6 +180,7 @@ async def amain() -> int:
             loop.add_signal_handler(sig, stop_event.set)
 
     await telegram_audit.start()
+    await reject_audit.start()
     await publisher.start()
     await publisher.wait_connected(timeout=15.0)
     await manager.start()
@@ -199,6 +206,7 @@ async def amain() -> int:
         await manager.stop()
         await publisher.stop()
         await telegram_audit.stop()
+        await reject_audit.stop()
 
     return 0
 

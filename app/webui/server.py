@@ -1934,6 +1934,50 @@ def create_app(srv: WebUIServer) -> FastAPI:
         return {"path": str(base), "total": len(all_lines),
                 "lines": all_lines[-n:], "archives": archives}
 
+    @app.get("/api/reject-audit")
+    async def reject_audit(lines: int = 300, day: str | None = None) -> dict:
+        """Verwurf-Protokoll (reject_audit.log, im Named Volume, taeglich
+        rotierend + gzip). Jede von der Pipeline verworfene Entscheidung mit
+        Grund (db3_nonzero, over_max_*, energy_jump, energy_monotonie,
+        energy_first_zero). Damit nachvollziehbar ist, WARUM etwas verworfen
+        wurde und ob es nur die Zaehler oder auch andere Sensoren betrifft.
+        Read-only.
+
+        Ohne Parameter: letzte N Zeilen des AKTIVEN Tages + Liste der Archiv-Tage.
+        Mit day=YYYY-MM-DD: letzte N Zeilen aus diesem Archiv-Tag."""
+        cd = srv.config_dir
+        base = cd / "reject_audit.log"
+        prefix, suffix = "reject_audit.", ".log.gz"
+        archives = sorted(
+            (p.name[len(prefix):-len(suffix)] for p in cd.glob(f"{prefix}*{suffix}")),
+            reverse=True,
+        )
+        n = max(1, min(lines, 20000))
+        if day:
+            gz = cd / f"{prefix}{day}{suffix}"
+            if not gz.exists():
+                return {"day": day, "lines": [], "archives": archives,
+                        "note": "Kein Archiv fuer diesen Tag."}
+            try:
+                with gzip.open(gz, "rt", encoding="utf-8", errors="replace") as f:
+                    all_lines = f.read().splitlines()
+            except OSError as exc:
+                return {"day": day, "lines": [], "archives": archives,
+                        "note": f"Lesefehler: {exc}"}
+            return {"day": day, "total": len(all_lines),
+                    "lines": all_lines[-n:], "archives": archives}
+        if not base.exists():
+            return {"path": str(base), "lines": [], "archives": archives,
+                    "note": "Noch keine Verwuerfe protokolliert."}
+        try:
+            with base.open("r", encoding="utf-8", errors="replace") as f:
+                all_lines = f.read().splitlines()
+        except OSError as exc:
+            return {"path": str(base), "lines": [], "archives": archives,
+                    "note": f"Lesefehler: {exc}"}
+        return {"path": str(base), "total": len(all_lines),
+                "lines": all_lines[-n:], "archives": archives}
+
     @app.get("/api/diagnostics")
     async def diagnostics() -> dict:
         return {
