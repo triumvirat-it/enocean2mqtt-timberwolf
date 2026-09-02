@@ -185,6 +185,11 @@ class TelegramPipeline:
         # zeitbezogenen Sprunggrenze (ein Zaehler kann pro Minute nur so viel
         # zulegen, wie die Anschlussleistung hergibt).
         self._monotonic_ts: dict[tuple, float] = {}
+        # Dauerhafter Speicher der Zaehlerstaende (ueberlebt Neustarts). Wird
+        # von main.py gesetzt; ohne ihn arbeitet die Pipeline wie frueher nur
+        # im Arbeitsspeicher — dann ist nach jedem Neustart der letzte Stand
+        # weg und der erste eintreffende Wert wird zur neuen Referenz.
+        self.energy_state = None
         # Die zuletzt wegen Monotonie verworfenen Werte je Zaehler. Steigen sie
         # untereinander sauber an, war der GESPEICHERTE Stand der Ausreisser —
         # dann wird er freigegeben (Selbstheilung, siehe unten).
@@ -230,6 +235,19 @@ class TelegramPipeline:
     @property
     def unknown_senders(self) -> set[str]:
         return self._unknown_seen
+
+    def _stand_merken(self, cache_key: tuple, wert: float, ts: float) -> None:
+        """
+        Letzten gueltigen Zaehlerstand festhalten — im Arbeitsspeicher UND in
+        der Sicherung, damit er einen Neustart ueberlebt. Ohne die Sicherung
+        beginnt der Monotonie-Schutz nach jedem Deploy bei null, und der erste
+        eintreffende Wert wird zur Referenz.
+        """
+        self._monotonic_cache[cache_key] = float(wert)
+        self._monotonic_ts[cache_key] = ts
+        if self.energy_state is not None:
+            self.energy_state.set(cache_key, float(wert), ts)
+            self.energy_state.save_if_due()
 
     def _reject_log(self, rx, field, value, reason,
                     eep=None, detail="", last_good=None) -> None:
@@ -460,6 +478,24 @@ class TelegramPipeline:
             tariff = decoded.get("tariff", 0)
             cache_key = (sender_hex, int(tariff), "energy_kwh")
             last_val = self._monotonic_cache.get(cache_key)
+            # Nach einem Neustart ist der Arbeitsspeicher leer — dann kommt der
+            # letzte Stand aus der gesicherten Datei. Ohne das waere der erste
+            # eintreffende Wert (womoeglich eine 0 oder ein Sub-Tarif-Stand)
+            # die neue Referenz, und die Visualisierung rechnet den Sprung
+            # darauf als Tagesverbrauch.
+            if last_val is None and self.energy_state is not None:
+                last_val = self.energy_state.get(cache_key)
+                if last_val is not None:
+                    self._monotonic_cache[cache_key] = last_val
+                    gespeicherte_zeit = self.energy_state.get_ts(cache_key)
+                    if gespeicherte_zeit:
+                        self._monotonic_ts[cache_key] = gespeicherte_zeit
+                    log.info(
+                        "Zaehlerstand aus der Sicherung uebernommen: %s "
+                        "tariff=%s = %.2f kWh — der Monotonie-Schutz greift "
+                        "ab sofort wieder.",
+                        sender_hex, tariff, last_val,
+                    )
             max_jump = getattr(self.defaults, "energy_max_jump_kwh", 1000.0)
             if isinstance(new_val, (int, float)):
                 if last_val is None:
@@ -486,8 +522,7 @@ class TelegramPipeline:
                         sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
                         new_val, last_val, "UEBERNOMMEN", "Erstwert",
                     )
-                    self._monotonic_cache[cache_key] = float(new_val)
-                    self._monotonic_ts[cache_key] = rx.received_at
+                    self._stand_merken(cache_key, new_val, rx.received_at)
                 elif new_val < last_val:
                     # Selbstheilung: Kommen mehrere Werte hintereinander, die
                     # unter dem gespeicherten Stand liegen, dabei aber SAUBER
@@ -524,8 +559,7 @@ class TelegramPipeline:
                             eep=decoded.get("_eep"), last_good=new_val,
                             detail=f"tariff={tariff} reihe={len(reihe)}",
                         )
-                        self._monotonic_cache[cache_key] = float(new_val)
-                        self._monotonic_ts[cache_key] = rx.received_at
+                        self._stand_merken(cache_key, new_val, rx.received_at)
                         reihe.clear()
                     else:
                         _audit_energy(
@@ -595,8 +629,7 @@ class TelegramPipeline:
                         new_val, last_val, "UEBERNOMMEN",
                         f"Anstieg +{anstieg:.2f} kWh plausibel",
                     )
-                    self._monotonic_cache[cache_key] = float(new_val)
-                    self._monotonic_ts[cache_key] = rx.received_at
+                    self._stand_merken(cache_key, new_val, rx.received_at)
                     self._monotonic_rejects.pop(cache_key, None)
             else:
                 # Nicht-numerischer energy_kwh (sollte nicht vorkommen) — trotzdem

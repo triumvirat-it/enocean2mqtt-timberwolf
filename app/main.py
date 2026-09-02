@@ -16,6 +16,7 @@ from .cascade import Cascade
 from .config import AppConfig
 from .devices import DeviceRegistry
 from .eep import register_default_profiles
+from .energy_state import EnergyStateStore
 from .gateway import GatewayManager
 from .mqtt_client import MQTTPublisher
 from .observed_senders import ObservedSenderRegistry
@@ -89,6 +90,13 @@ async def amain() -> int:
     )
     state_store = ActorStateStore(config_dir / "actor_state.yaml")
     pipeline = TelegramPipeline(manager, publisher, devices, cascade=cascade)
+    # Zaehlerstaende ueber Neustarts hinweg: Ohne diese Sicherung faengt der
+    # Monotonie-Schutz nach jedem Deploy bei null an — der erste eintreffende
+    # Wert wird dann zur Referenz, und die Visualisierung rechnet den Sprung
+    # darauf als Tagesverbrauch (Ekki, 02.09.2026).
+    energy_state = EnergyStateStore(config_dir / "energy_state.yaml")
+    energy_state.load()
+    pipeline.energy_state = energy_state
     # Auto-EEP-Wechsel (M47): Pipeline darf devices.yaml schreiben wenn ein
     # Lerntelegramm einen Channel-EEP-Wechsel ausloest (z.B. F3Z14D-Eingang
     # via PCT14 von Strom auf Gas umkonfiguriert).
@@ -201,6 +209,13 @@ async def amain() -> int:
             state_store.save()
         except Exception as exc:  # noqa: BLE001
             log.warning("state_store.save beim Shutdown fehlgeschlagen: %s", exc)
+        # Zaehlerstaende sichern — genau hier gingen sie bisher verloren, und
+        # nach dem Neustart wurde der erste eintreffende Wert zur Referenz.
+        try:
+            energy_state.save()
+            log.info("Zaehlerstaende gesichert: %d Eintraege.", len(energy_state))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("energy_state.save beim Shutdown fehlgeschlagen: %s", exc)
         await webui.stop()
         await pipeline.stop()
         await manager.stop()
