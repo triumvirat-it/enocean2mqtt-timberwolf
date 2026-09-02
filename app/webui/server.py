@@ -761,6 +761,8 @@ def create_app(srv: WebUIServer) -> FastAPI:
             "defaults": {
                 "ptm_on_press": srv.cfg.defaults.ptm_on_press,
                 "energy_max_jump_kwh": srv.cfg.defaults.energy_max_jump_kwh,
+                "energy_max_kw": srv.cfg.defaults.energy_max_kw,
+                "energy_entsperren_nach": srv.cfg.defaults.energy_entsperren_nach,
                 "power_max_w": srv.cfg.defaults.power_max_w,
                 "flow_max_m3h": srv.cfg.defaults.flow_max_m3h,
                 "flow_max_l_min": srv.cfg.defaults.flow_max_l_min,
@@ -798,7 +800,8 @@ def create_app(srv: WebUIServer) -> FastAPI:
                 srv.cfg.defaults.ptm_on_press = val
             # Numerische Obergrenzen (>= 0, 0 = Schutz aus). Gleiches Muster
             # fuer den Energie-Sprung + die drei Momentan-/Durchfluss-Grenzen.
-            for _key in ("energy_max_jump_kwh", "power_max_w",
+            for _key in ("energy_max_jump_kwh", "energy_max_kw",
+                         "energy_entsperren_nach", "power_max_w",
                          "flow_max_m3h", "flow_max_l_min"):
                 _raw = payload.defaults.get(_key)
                 if _raw is None:
@@ -1038,6 +1041,73 @@ def create_app(srv: WebUIServer) -> FastAPI:
         return [p.to_json() for p in preg.all()]
 
     # -------- Devices --------
+
+    @app.get("/api/health/stale")
+    async def stale_channels(hours: float = 6.0) -> dict:
+        """
+        Kanaele, die seit laengerem KEINEN Messwert mehr geliefert haben.
+
+        Warum es das gibt: Guard und Monotonie-Schutz fangen *falsche* Werte ab.
+        Ein Zaehler, der schlicht aufhoert zu liefern, faellt dagegen erst auf,
+        wenn jemand zufaellig auf die Visualisierung schaut — beim Vorfall am
+        02.09.2026 hat das Tage gedauert. Dieser Endpunkt macht solche stillen
+        Kanaele sichtbar; der Smoke-Test nach dem Deploy fragt ihn ab.
+
+        Zaehlt nur Kanaele mit einem Wert-Feld (meta.field). Nach einem Neustart
+        ist der Wert-Cache leer — dann melden Kanaele "noch nichts empfangen",
+        bis das erste Telegramm kommt. Das ist erwartetes Verhalten und wird
+        ueber `seit_start_sekunden` mit ausgewiesen.
+        """
+        jetzt = time.time()
+        grenze = max(0.0, float(hours)) * 3600.0
+        still: list[dict] = []
+        geprueft = 0
+
+        for d in srv.devices.all():
+            for ch in d.channels:
+                feld = (ch.meta or {}).get("field")
+                if not feld:
+                    continue  # nur Wert-Kanaele, keine Schalter/Wippen
+                geprueft += 1
+
+                sid = (ch.enocean_id or "").upper()
+                tele_chan = (ch.meta or {}).get("tele_channel")
+                last = None
+                if sid:
+                    if tele_chan is not None:
+                        last = srv.log_buffer.last_state.get(f"{sid}#{tele_chan}")
+                    else:
+                        last = srv.log_buffer.last_state.get(sid)
+
+                ts = None
+                if last:
+                    fm = (last.get("device") or {}).get("decoded", {}).get("_field_meta") or {}
+                    eintrag = fm.get(feld)
+                    ts = (eintrag or {}).get("ts") or last.get("ts")
+
+                alter = None if ts is None else round(jetzt - float(ts), 1)
+                if ts is None or alter > grenze:
+                    still.append({
+                        "device": d.name or d.device_id,
+                        "channel": ch.name or ch.channel_id,
+                        "field": feld,
+                        "sender_id": sid,
+                        "eep": ch.eep,
+                        "letzter_wert_vor_sekunden": alter,
+                        "letzter_wert_ts": ts,
+                    })
+
+        still.sort(key=lambda e: (e["letzter_wert_vor_sekunden"] is not None,
+                                 e["letzter_wert_vor_sekunden"] or 0),
+                   reverse=True)
+
+        return {
+            "schwelle_stunden": float(hours),
+            "geprueft": geprueft,
+            "still": len(still),
+            "seit_start_sekunden": round(jetzt - srv.started_at, 1) if getattr(srv, "started_at", None) else None,
+            "kanaele": still,
+        }
 
     @app.get("/api/devices")
     async def list_devices() -> list[dict]:

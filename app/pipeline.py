@@ -112,6 +112,40 @@ def remap_a5_12_field(old_field: str | None, new_eep: str | None) -> str | None:
     return mapping.get(new_eep)
 
 
+# Schluessel, die KEIN Messwert sind, sondern den Zustand des Telegramms
+# beschreiben. Eine Nachricht, die nur aus solchen besteht, hat auf einem
+# state-Topic nichts verloren.
+_NUR_DIAGNOSE = frozenset({
+    "info",          # z.B. unknown_db0_0x0E
+    "error",         # z.B. short payload
+    "teach_in",      # Lerntelegramm
+    "detected_eep",  # Beifang des Lerntelegramms
+    "db1",           # Beifang der Seriennummer-Dekodierung
+    "tariff",        # Begleitangabe, ohne Messwert wertlos
+    "units",         # Einheiten-Map
+})
+
+
+def hat_messwert(decoded: dict) -> bool:
+    """
+    Enthaelt das Dekodat mindestens einen echten Wert?
+
+    Hintergrund (Vorfall 02.09.2026, dritter dieser Art): Ein Telegramm, das der
+    Decoder nicht versteht, lieferte {"info": "unknown_db0_0x0E"} — und diese
+    Nachricht wurde auf das retained state-Topic des Zaehlers publiziert. Damit
+    war der letzte gueltige Zaehlerstand im Broker weg, und jede Visualisierung
+    dahinter zeigte Unsinn. Dieselbe Mechanik steckte hinter den Vorfaellen im
+    Juli und August.
+
+    Regel seitdem: Auf ein Wert-Topic geht nur, was auch einen Wert traegt.
+    Diagnose bleibt im raw-Topic, im Live-Log und im Verwurf-Protokoll sichtbar.
+    """
+    return any(
+        not k.startswith("_") and k not in _NUR_DIAGNOSE
+        for k in decoded
+    )
+
+
 def _invert_shutter_direction(decoded: dict) -> dict:
     """
     Vertauscht moving_up/moving_down und end_up/end_down im decoded-dict.
@@ -147,6 +181,14 @@ class TelegramPipeline:
         # sind als der letzte (z.B. Eltako DSZ14DRS sendet zwischendurch Sub-Tarif
         # mit value=0 obwohl Hauptzähler bei 42148 ist).
         self._monotonic_cache: dict[tuple, float] = {}
+        # Zeitpunkt des letzten uebernommenen Standes — Grundlage der
+        # zeitbezogenen Sprunggrenze (ein Zaehler kann pro Minute nur so viel
+        # zulegen, wie die Anschlussleistung hergibt).
+        self._monotonic_ts: dict[tuple, float] = {}
+        # Die zuletzt wegen Monotonie verworfenen Werte je Zaehler. Steigen sie
+        # untereinander sauber an, war der GESPEICHERTE Stand der Ausreisser —
+        # dann wird er freigegeben (Selbstheilung, siehe unten).
+        self._monotonic_rejects: dict[tuple, list[float]] = {}
         # Cache fuer Seriennummer-Teile bei A5-12-01 (DSZ14DRS sendet alle
         # 10 Minuten 2 Teile). Wenn beide Teile bekannt sind, ergaenzen wir
         # decoded["serial_number"] mit dem vollstaendigen String "S-AABBCC".
@@ -445,50 +487,117 @@ class TelegramPipeline:
                         new_val, last_val, "UEBERNOMMEN", "Erstwert",
                     )
                     self._monotonic_cache[cache_key] = float(new_val)
+                    self._monotonic_ts[cache_key] = rx.received_at
                 elif new_val < last_val:
-                    _audit_energy(
-                        sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
-                        new_val, last_val, "VERWORFEN",
-                        "Monotonie verletzt (unter letztem Stand)",
-                    )
-                    log.warning(
-                        "Monotonie verletzt — verworfen: %s tariff=%s "
-                        "energy_kwh %.2f -> %.2f (Zaehlerstand laeuft nie zurueck)",
-                        sender_hex, tariff, last_val, new_val,
-                    )
-                    self._reject_log(
-                        rx, "energy_kwh", new_val, "energy_monotonie",
-                        eep=decoded.get("_eep"), last_good=last_val,
-                        detail=f"tariff={tariff}",
-                    )
-                    return
-                elif max_jump and (new_val - last_val) > max_jump:
-                    # Sprung nach oben zu gross — Ausreisser, NICHT cachen.
-                    _audit_energy(
-                        sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
-                        new_val, last_val, "VERWORFEN",
-                        f"Sprung +{new_val - last_val:.2f} > max {max_jump:.0f} kWh",
-                    )
-                    log.warning(
-                        "Unplausibler energy_kwh-Sprung verworfen: %s tariff=%s "
-                        "%.2f -> %.2f (+%.2f > max %.2f kWh) — vermutlich "
-                        "Funk-/Bus-Stoerung, Cache bleibt bei %.2f",
-                        sender_hex, tariff, last_val, new_val,
-                        new_val - last_val, max_jump, last_val,
-                    )
-                    self._reject_log(
-                        rx, "energy_kwh", new_val, "energy_jump",
-                        eep=decoded.get("_eep"), last_good=last_val,
-                        detail=f"tariff={tariff} max_jump={max_jump:.0f}",
-                    )
-                    return
+                    # Selbstheilung: Kommen mehrere Werte hintereinander, die
+                    # unter dem gespeicherten Stand liegen, dabei aber SAUBER
+                    # AUFSTEIGEN, dann ist nicht der Zaehler kaputt — dann war
+                    # der gespeicherte Stand ein Ausreisser. Ohne diesen Ausweg
+                    # bleibt ein Zaehler bis zum Container-Neustart blockiert
+                    # (Vorfall 02.09.2026: Bueromzaehler, 142 Verwuerfe, tagelang
+                    # keine Werte, Statistik unbrauchbar).
+                    noetig = int(getattr(self.defaults, "energy_entsperren_nach", 3) or 0)
+                    reihe = self._monotonic_rejects.setdefault(cache_key, [])
+                    if not reihe or new_val > reihe[-1]:
+                        reihe.append(float(new_val))
+                    else:
+                        # Keine saubere Reihe (gleich oder rueckwaerts, z.B.
+                        # wiederkehrende 0-Werte) -> von vorne zaehlen.
+                        reihe.clear()
+                        reihe.append(float(new_val))
+
+                    if noetig and len(reihe) >= noetig:
+                        log.warning(
+                            "Monotonie-Schutz ENTSPERRT fuer %s tariff=%s: %d "
+                            "aufsteigende Werte unter dem gespeicherten Stand "
+                            "(%.2f) — zuletzt %.2f. Der gespeicherte Stand war "
+                            "ein Ausreisser und wird verworfen.",
+                            sender_hex, tariff, len(reihe), last_val, new_val,
+                        )
+                        _audit_energy(
+                            sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
+                            new_val, last_val, "UEBERNOMMEN",
+                            f"Selbstheilung nach {len(reihe)} aufsteigenden Werten",
+                        )
+                        self._reject_log(
+                            rx, "energy_kwh", last_val, "energy_referenz_verworfen",
+                            eep=decoded.get("_eep"), last_good=new_val,
+                            detail=f"tariff={tariff} reihe={len(reihe)}",
+                        )
+                        self._monotonic_cache[cache_key] = float(new_val)
+                        self._monotonic_ts[cache_key] = rx.received_at
+                        reihe.clear()
+                    else:
+                        _audit_energy(
+                            sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
+                            new_val, last_val, "VERWORFEN",
+                            "Monotonie verletzt (unter letztem Stand)",
+                        )
+                        log.warning(
+                            "Monotonie verletzt — verworfen: %s tariff=%s "
+                            "energy_kwh %.2f -> %.2f (Zaehlerstand laeuft nie "
+                            "zurueck; %d/%d fuer Selbstheilung)",
+                            sender_hex, tariff, last_val, new_val,
+                            len(reihe), noetig or 0,
+                        )
+                        self._reject_log(
+                            rx, "energy_kwh", new_val, "energy_monotonie",
+                            eep=decoded.get("_eep"), last_good=last_val,
+                            detail=f"tariff={tariff}",
+                        )
+                        return
                 else:
+                    # Zwei Obergrenzen fuer den Anstieg — die kleinere gilt:
+                    #  a) feste Grenze in kWh (energy_max_jump_kwh)
+                    #  b) ZEITBEZOGEN: was die Anschlussleistung in der
+                    #     verstrichenen Zeit ueberhaupt hergibt. Genau daran
+                    #     scheiterte der bisherige Schutz — +353 kWh in
+                    #     10 Minuten lagen unter der festen 1000-kWh-Grenze,
+                    #     sind physikalisch aber unmoeglich (das waeren 2 MW).
+                    anstieg = new_val - last_val
+                    grenze = max_jump if max_jump else None
+                    grund = f"max {max_jump:.0f} kWh" if max_jump else ""
+
+                    max_kw = getattr(self.defaults, "energy_max_kw", 0.0) or 0.0
+                    last_ts = self._monotonic_ts.get(cache_key)
+                    if max_kw > 0 and last_ts:
+                        stunden = max(0.0, rx.received_at - last_ts) / 3600.0
+                        # Ein Telegramm Toleranz obendrauf, damit ein verpasster
+                        # Sendezyklus keinen Fehlalarm ausloest.
+                        zeitgrenze = max_kw * (stunden + 0.25)
+                        if grenze is None or zeitgrenze < grenze:
+                            grenze = zeitgrenze
+                            grund = (f"max {zeitgrenze:.1f} kWh in "
+                                     f"{stunden * 60:.0f} Min bei {max_kw:.0f} kW")
+
+                    if grenze is not None and anstieg > grenze:
+                        _audit_energy(
+                            sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
+                            new_val, last_val, "VERWORFEN",
+                            f"Sprung +{anstieg:.2f} > {grund}",
+                        )
+                        log.warning(
+                            "Unplausibler energy_kwh-Sprung verworfen: %s "
+                            "tariff=%s %.2f -> %.2f (+%.2f, erlaubt waeren %s) "
+                            "— vermutlich Funk-/Bus-Stoerung, Stand bleibt %.2f",
+                            sender_hex, tariff, last_val, new_val,
+                            anstieg, grund, last_val,
+                        )
+                        self._reject_log(
+                            rx, "energy_kwh", new_val, "energy_jump",
+                            eep=decoded.get("_eep"), last_good=last_val,
+                            detail=f"tariff={tariff} erlaubt={grund}",
+                        )
+                        return
+
                     _audit_energy(
                         sender_hex, tariff, rx.gateway_name, tel.rssi_dbm,
                         new_val, last_val, "UEBERNOMMEN",
-                        f"Anstieg +{new_val - last_val:.2f} kWh plausibel",
+                        f"Anstieg +{anstieg:.2f} kWh plausibel",
                     )
                     self._monotonic_cache[cache_key] = float(new_val)
+                    self._monotonic_ts[cache_key] = rx.received_at
+                    self._monotonic_rejects.pop(cache_key, None)
             else:
                 # Nicht-numerischer energy_kwh (sollte nicht vorkommen) — trotzdem
                 # protokollieren, damit wir Decoder-Ausreisser sehen.
@@ -600,6 +709,26 @@ class TelegramPipeline:
                     continue
             device_match = (d_cand, c_cand)
             break
+
+        # Wert-Pflicht (M-Vorfall 02.09.2026): Ein state-Topic wird nur mit einer
+        # Nachricht beschrieben, die auch einen Messwert traegt. Eine reine
+        # Diagnosemeldung wuerde sonst als retained Nachricht den letzten guten
+        # Wert im Broker ueberschreiben — siehe hat_messwert().
+        # Das raw-Topic oben und der Live-Log haben die Meldung bereits gesehen.
+        if matches and not hat_messwert(decoded):
+            if "info" in decoded or "error" in decoded:
+                _grund = decoded.get("info") or decoded.get("error")
+                _kanaele = ", ".join(c.channel_id for _, c in matches)
+                log.warning(
+                    "Telegramm ohne Messwert NICHT publiziert (%s) — Sender %s, "
+                    "Kanaele: %s, raw=%s. Der letzte gute Wert im Broker bleibt stehen.",
+                    _grund, sender_hex, _kanaele, tel.payload.hex().upper(),
+                )
+                self._reject_log(
+                    rx, "*", _grund, "kein_messwert",
+                    eep=decoded.get("_eep"), detail=f"kanaele={_kanaele}",
+                )
+            matches = []
 
         if matches:
             decoded_clean = {k: v for k, v in decoded.items() if not k.startswith("_")}

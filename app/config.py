@@ -88,6 +88,24 @@ class DefaultsConfig(BaseModel):
         "Funk-/Bus-Stoerung und werden verworfen (sonst wuerde ein einzelner "
         "Ausreisser den Monotonie-Filter dauerhaft 'vergiften'). 0 = aus.",
     )
+    energy_max_kw: float = Field(
+        50.0,
+        description="Anschlussleistung in kW, aus der die ZEITBEZOGENE "
+        "Sprunggrenze berechnet wird: zwischen zwei Telegrammen kann ein "
+        "Zaehler hoechstens (kW x verstrichene Stunden) zulegen. Faengt "
+        "Ausreisser, die unter der festen kWh-Grenze liegen — z.B. +353 kWh "
+        "innerhalb von 10 Minuten (Vorfall 02.09.2026: der Bueromzaehler war "
+        "danach tagelang blockiert). 0 = aus, dann greift nur energy_max_jump_kwh.",
+    )
+    energy_entsperren_nach: int = Field(
+        3,
+        description="Selbstheilung des Monotonie-Schutzes: So viele "
+        "aufeinanderfolgende, untereinander AUFSTEIGENDE Werte unterhalb des "
+        "gespeicherten Standes gelten als Beweis, dass der gespeicherte Stand "
+        "der Ausreisser war — er wird dann verworfen und der Zaehler laeuft "
+        "weiter. Ohne das bleibt ein Zaehler bis zum Neustart blockiert. "
+        "0 = aus.",
+    )
     power_max_w: float = Field(
         50000.0,
         description="Obergrenze fuer Momentanleistung (current_w) in Watt. "

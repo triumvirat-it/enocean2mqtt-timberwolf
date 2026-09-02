@@ -328,12 +328,25 @@ def _decode_a5_12_common(payload: bytes) -> dict | None:
         return {"info": "serial_unknown_part", "db1": db1}
     if (db0 & 0x08) == 0:
         return {"teach_in": True}
-    if db0 not in (0x09, 0x0C, 0x19, 0x1C):
+    # DB0 wird BITWEISE nach EEP A5-12-01 ausgewertet — keine Liste erlaubter
+    # Bytes. Grund (Vorfall 02.09.2026): Der Zaehlersammler sendet die Leistung
+    # von Phase 1/2 mit Divisor 100 (DB0=0x0E). Das ist gueltig, stand aber nicht
+    # in der frueheren Whitelist (0x09/0x0C/0x19/0x1C) — die Telegramme wurden als
+    # "unknown_db0" verworfen und haben den letzten guten Zaehlerstand ueberschrieben.
+    #
+    #   Bit 7..5 = reserviert   (muessen 0 sein — sonst verstehen wir das
+    #                            Telegramm nicht und geben KEINEN Wert aus)
+    #   Bit 4    = Tarif        (0 = Normaltarif, 1 = Nachttarif)
+    #   Bit 3    = LRN          (1 = Datentelegramm; oben schon geprueft)
+    #   Bit 2    = Datentyp     (0 = Zaehlerstand, 1 = Momentanwert/Durchfluss)
+    #   Bit 1..0 = Divisor      (0 = /1, 1 = /10, 2 = /100, 3 = /1000)
+    if db0 & 0xE0:
         return {"info": f"unknown_db0_0x{db0:02X}"}
     return {
         "data_raw": (payload[0] << 16) | (payload[1] << 8) | payload[2],
         "tariff": 1 if (db0 & 0x10) else 0,
         "is_flow": (db0 & 0x04) != 0,
+        "divisor": (1, 10, 100, 1000)[db0 & 0x03],
     }
 
 
@@ -352,10 +365,12 @@ def decode_a5_12_meter(payload: bytes, status: int, rorg: int) -> dict:
                      1 = Augenblicksleistung in W
         Bit 1..0 = fest 01
 
-      Moegliche DB0-Werte:
-        0x09 -> kWh Normaltarif
+      Bit 1..0 sind NICHT fest, sondern der Divisor (1/10/100/1000). Haeufige
+      Kombinationen:
+        0x09 -> kWh Normaltarif  (Zaehlerstand, /10)
         0x19 -> kWh Nachttarif
-        0x0C -> W   Normaltarif
+        0x0C -> W   Normaltarif  (Momentanwert, /1)
+        0x0E -> W   Normaltarif  (Momentanwert, /100 — z.B. F3Z14D Phase 1/2)
         0x1C -> W   Nachttarif
 
     Liefert energy_kwh ODER current_w (nie beide gleichzeitig), plus
@@ -368,13 +383,13 @@ def decode_a5_12_meter(payload: bytes, status: int, rorg: int) -> dict:
         return {"error": "short payload"}
     if "data_raw" not in parsed:
         return parsed  # teach_in / serial_high/low / info
-    # A5-12-01 Strom:
-    #   DB0 = 0x09 / 0x19 -> Zaehlerstand in 0,1 kWh (energy_kwh)
-    #   DB0 = 0x0C / 0x1C -> Augenblicksleistung in W (current_w)
     tariff = parsed["tariff"]
+    divisor = parsed["divisor"]
     if parsed["is_flow"]:
-        return {"tariff": tariff, "current_w": float(parsed["data_raw"])}
-    return {"tariff": tariff, "energy_kwh": round(parsed["data_raw"] * 0.1, 2)}
+        return {"tariff": tariff, "current_w": round(parsed["data_raw"] / divisor, 3)}
+    # Zaehlerstand: Eltako liefert 0,1-kWh-Schritte (Divisor 10). Andere Divisoren
+    # kommen vor und werden genauso beruecksichtigt.
+    return {"tariff": tariff, "energy_kwh": round(parsed["data_raw"] / divisor, 3)}
 
 
 def decode_a5_12_gas(payload: bytes, status: int, rorg: int) -> dict:
@@ -388,11 +403,10 @@ def decode_a5_12_gas(payload: bytes, status: int, rorg: int) -> dict:
     if "data_raw" not in parsed:
         return parsed
     tariff = parsed["tariff"]
+    divisor = parsed["divisor"]
     if parsed["is_flow"]:
-        # Eltako-Gas-Telegramme mit "Flow" sind unueblich; falls doch, geben
-        # wir den Rohwert in m^3/h aus (Annahme: 1er-Skala).
-        return {"tariff": tariff, "flow_m3h": float(parsed["data_raw"])}
-    return {"tariff": tariff, "volume_m3": round(parsed["data_raw"] * 0.1, 2)}
+        return {"tariff": tariff, "flow_m3h": round(parsed["data_raw"] / divisor, 3)}
+    return {"tariff": tariff, "volume_m3": round(parsed["data_raw"] / divisor, 3)}
 
 
 def decode_a5_12_water(payload: bytes, status: int, rorg: int) -> dict:
@@ -406,10 +420,11 @@ def decode_a5_12_water(payload: bytes, status: int, rorg: int) -> dict:
     if "data_raw" not in parsed:
         return parsed
     tariff = parsed["tariff"]
+    divisor = parsed["divisor"]
     if parsed["is_flow"]:
         # Annahme: Liter/Minute fuer Wasser-Flow
-        return {"tariff": tariff, "flow_l_min": float(parsed["data_raw"])}
-    return {"tariff": tariff, "volume_m3": round(parsed["data_raw"] * 0.1, 2)}
+        return {"tariff": tariff, "flow_l_min": round(parsed["data_raw"] / divisor, 3)}
+    return {"tariff": tariff, "volume_m3": round(parsed["data_raw"] / divisor, 3)}
 
 
 def decode_a5_13_weather(payload: bytes, status: int, rorg: int) -> dict:

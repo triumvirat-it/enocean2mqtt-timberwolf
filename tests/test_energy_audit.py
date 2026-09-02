@@ -58,7 +58,10 @@ def _pipeline():
         manager=object(), publisher=_CapturePublisher(),
         devices=DeviceRegistry([dev]), cascade=Cascade(),
     )
-    pipe.defaults = DefaultsConfig()  # energy_max_jump_kwh = 1000
+    # Diese Tests pruefen das Protokoll der FESTEN kWh-Grenze. Die zeitbezogene
+    # Grenze ist hier aus, weil die Telegramme ohne Zeitabstand hintereinander
+    # kommen; sie hat eigene Tests in test_energy_monotonic.py.
+    pipe.defaults = DefaultsConfig(energy_max_kw=0)
     return pipe, None
 
 

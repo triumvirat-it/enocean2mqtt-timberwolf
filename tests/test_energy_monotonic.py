@@ -60,7 +60,7 @@ def _rx(energy_kwh: float) -> ReceivedTelegram:
     return ReceivedTelegram(gateway_name="gw1", telegram=tel)
 
 
-def _pipeline():
+def _pipeline(defaults: DefaultsConfig | None = None):
     from app.pipeline import TelegramPipeline
     register_default_profiles()
     pub = _CapturePublisher()
@@ -68,7 +68,10 @@ def _pipeline():
         manager=object(), publisher=pub,
         devices=DeviceRegistry([_meter_device()]), cascade=Cascade(),
     )
-    pipe.defaults = DefaultsConfig()  # energy_max_jump_kwh = 1000
+    # Diese Tests pruefen die FESTE kWh-Grenze. Die zeitbezogene Grenze
+    # (energy_max_kw) hat einen eigenen Test weiter unten — hier ist sie aus,
+    # weil die Telegramme im Test ohne Zeitabstand hintereinander kommen.
+    pipe.defaults = defaults or DefaultsConfig(energy_max_kw=0)
     return pipe, pub
 
 
@@ -99,8 +102,75 @@ def test_normal_increase_still_passes():
 
 
 def test_jump_guard_off_when_zero():
-    pipe, pub = _pipeline()
-    pipe.defaults = DefaultsConfig(energy_max_jump_kwh=0)  # Schutz aus
+    # Beide Sprunggrenzen aus -> auch ein absurder Wert kommt durch.
+    pipe, pub = _pipeline(DefaultsConfig(energy_max_jump_kwh=0, energy_max_kw=0))
     asyncio.run(pipe._process(_rx(47000.0)))
     asyncio.run(pipe._process(_rx(99472.0)))
     assert 99472.0 in _published_energy(pub)
+
+
+# --------------------------------------------------------------------------
+# Zeitbezogene Sprunggrenze und Selbstheilung — beides neu nach dem Vorfall
+# vom 02.09.2026: Der Bueromzaehler hatte +353 kWh in 10 Minuten uebernommen
+# (unter der festen 1000-kWh-Grenze, physikalisch aber unmoeglich) und war
+# danach tagelang blockiert: 142 Verwuerfe, keine Statistik mehr.
+# --------------------------------------------------------------------------
+
+def test_zeitbezogene_grenze_faengt_den_kleinen_ausreisser():
+    """+353 kWh in 10 Minuten sind bei 50 kW Anschlussleistung unmoeglich —
+    auch wenn sie unter der festen kWh-Grenze liegen."""
+    pipe, pub = _pipeline(DefaultsConfig(energy_max_kw=50.0))
+    basis = _rx(48727.6)
+    asyncio.run(pipe._process(basis))
+
+    spaeter = _rx(49080.3)
+    spaeter.received_at = basis.received_at + 600     # 10 Minuten danach
+    asyncio.run(pipe._process(spaeter))
+
+    energien = _published_energy(pub)
+    assert 48727.6 in energien
+    assert 49080.3 not in energien, (
+        "Der Ausreisser wurde uebernommen — genau so wurde der Zaehler blockiert."
+    )
+
+
+def test_echter_anstieg_ueber_lange_pause_kommt_durch():
+    """Nach einer langen Empfangspause darf der Zaehler ordentlich zugelegt
+    haben — die Grenze waechst mit der verstrichenen Zeit."""
+    pipe, pub = _pipeline(DefaultsConfig(energy_max_kw=50.0))
+    basis = _rx(48727.6)
+    asyncio.run(pipe._process(basis))
+
+    spaeter = _rx(48927.6)                            # +200 kWh
+    spaeter.received_at = basis.received_at + 6 * 3600  # nach 6 Stunden
+    asyncio.run(pipe._process(spaeter))
+
+    assert 48927.6 in _published_energy(pub)
+
+
+def test_selbstheilung_entsperrt_blockierten_zaehler():
+    """Ist doch einmal ein zu hoher Stand im Cache gelandet, muss der Zaehler
+    von selbst wieder freikommen: drei aufsteigende echte Werte genuegen."""
+    pipe, pub = _pipeline(DefaultsConfig(energy_max_jump_kwh=0, energy_max_kw=0,
+                                         energy_entsperren_nach=3))
+    asyncio.run(pipe._process(_rx(49080.3)))   # falscher Stand im Cache
+
+    for wert in (48727.6, 48727.7, 48727.8):   # echte Werte, aufsteigend
+        asyncio.run(pipe._process(_rx(wert)))
+
+    energien = _published_energy(pub)
+    assert 48727.8 in energien, "Zaehler blieb blockiert"
+    # Die ersten beiden werden noch verworfen (Beweisaufnahme), erst der
+    # dritte entsperrt — so bleibt ein einzelner Rueckwaerts-Ausreisser wirkungslos.
+    assert 48727.6 not in energien
+
+
+def test_selbstheilung_greift_nicht_bei_wiederkehrenden_nullwerten():
+    """Die 0-Werte eines inaktiven Sub-Tarifs sind KEINE aufsteigende Reihe —
+    sie duerfen den gueltigen Stand niemals ersetzen."""
+    pipe, pub = _pipeline(DefaultsConfig(energy_entsperren_nach=3))
+    asyncio.run(pipe._process(_rx(6.4)))
+    for _ in range(6):
+        asyncio.run(pipe._process(_rx(0.0)))
+
+    assert _published_energy(pub) == [6.4]
