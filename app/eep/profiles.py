@@ -927,6 +927,28 @@ def _make_encoder_dispatch(encoder_kind: str):
                 offset_min_c=omin, offset_max_c=omax, day=day,
                 night_setback_c=setback,
             )
+        # A5-10-03 Raumtemperaturregler-TX an einen Eltako-Heizungsaktor
+        # (FHK61-230V): Ist-Temperatur + ABSOLUTE Solltemperatur (8..30 °C).
+        # Kein Tag/Nacht-Bit, keine Absenktemperatur — und ausdruecklich keine
+        # Verschiebung wie beim Thermokon (siehe encode_a5_10_03_setpoint).
+        if encoder_kind == "a5_10_03":
+            temp = float(command.get("temperature",
+                                     command.get("temperature_c", 20.0)))
+            if command.get("setpoint") is not None or \
+                    command.get("setpoint_c") is not None:
+                soll = float(command.get("setpoint",
+                                         command.get("setpoint_c")))
+            else:
+                # Kommt nur eine Verschiebung an (Handbefehl, MQTT, Altbestand),
+                # wird sie mit dem Basissollwert des Aktors in eine Temperatur
+                # umgerechnet. base fuellt der TXRouter aus der Kanal-Konfig.
+                basis = float(command.get("base", command.get("base_c", 21.0)))
+                soll = basis + float(
+                    command.get("setpoint_offset",
+                                command.get("setpoint_offset_c", 0.0)))
+            return enc.encode_a5_10_03_setpoint(
+                sender_id, temperature_c=temp, setpoint_c=soll,
+            )
         # M82: D2-01-XX VLD-Aktor (OPUS BRiDGE etc.) — Set Output
         if encoder_kind == "d2_01_set_output":
             io_channel = int(command.get("io_channel", 0))
@@ -1164,6 +1186,12 @@ PROFILES: list[EEPProfile] = [
         description="OPUS RTS55, Eltako FTR/FAE, Thermokon SRC-DO — "
                     "Ist-Temperatur + Sollwert-Korrektur am Drehrad",
         rorg=0xA5, decoder=decode_a5_10_room_panel, ui_kind="rx",
+        # TX: an einen einzelnen Stellventilaktor sendbar, der auf dieses
+        # Profil angelernt ist (OPUS GN-A-U230V-HKR-1, Eltako FAE). ui_kind
+        # bleibt "rx" — die Regel ist dieselbe wie bei A5-10-06: der TX-Fall
+        # haengt am device_type (Valve_N), nicht am Profil.
+        encoder=_make_encoder_dispatch("a5_10_03"),
+        command_keys=["temperature", "setpoint_offset"],
         fields=[
             FieldDef("temperature_c",     "Temperatur",         unit="°C", decimals=1),
             FieldDef("setpoint_offset_c", "Sollwert-Korrektur", unit="°C", decimals=1),

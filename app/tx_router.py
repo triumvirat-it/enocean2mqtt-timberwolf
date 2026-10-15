@@ -20,6 +20,7 @@ from .devices import Device, DeviceChannel, DeviceRegistry
 from .eep import get_profile_registry
 from .encoders import (
     CommandFrame,
+    encode_4bs_raw,
     encode_4bs_teach_in,
     encode_a5_38_08_dim,
     encode_a5_38_08_switch,
@@ -713,6 +714,7 @@ class TXRouter:
         device_id: str,
         channel_id: str,
         sender_id_hex: str | None = None,
+        payload_hex: str | None = None,
     ) -> dict[str, Any]:
         """
         Sendet ein 4BS-Lerntelegramm an einen Aktor (M57 + M59).
@@ -792,7 +794,27 @@ class TXRouter:
         #   A5-38-08 (FSR/FUD)      -> 0xE0400D80
         # Mit 0x7FF ergibt sich FFFFFF80 und der Aktor ignoriert das Telegramm
         # (blinkt im LRN-Modus einfach weiter).
-        frame = encode_4bs_teach_in(sender_id, func, type_, manufacturer_id=0x00D)
+        if payload_hex:
+            # Vom Hersteller woertlich vorgegebene Bytes haben Vorrang vor
+            # unserer Rechnung. Eltako listet die Lerntelegramme seiner
+            # Sensoren direkt auf; beim FTR78S (A5-10-03) ist es 40 18 2D 80,
+            # waehrend die allgemeine Rechnung auf 40 18 0D 80 kommt — ein
+            # Byte daneben, und der Aktor lernt nicht (24.09.2026, FHK61).
+            roh = payload_hex.replace(" ", "").replace("0x", "")
+            try:
+                bytes_ = bytes.fromhex(roh)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Lerntelegramm '{payload_hex}' ist kein gueltiges Hex"
+                ) from exc
+            if len(bytes_) != 4:
+                raise ValueError(
+                    f"Lerntelegramm braucht genau 4 Bytes, bekommen: {len(bytes_)}"
+                )
+            frame = encode_4bs_raw(sender_id, bytes_)
+        else:
+            frame = encode_4bs_teach_in(sender_id, func, type_,
+                                        manufacturer_id=0x00D)
 
         # Gateway-Auswahl: zuerst Sender-spezifisches via_gateway, sonst
         # ueber Sender-ID-Block (M60), sonst erstes enabled Gateway.
@@ -1138,6 +1160,7 @@ class TXRouter:
         # Encoder die Verschiebung korrekt auf das DB2-Byte (0..255) abbildet.
         if eep.startswith("A5-10") and (
             "offset_min" not in command or "offset_max" not in command
+            or "base" not in command
         ):
             pairs: dict[str, str] = {}
             for part in (channel.meta.get("device_config") or "").split(";"):
@@ -1145,8 +1168,13 @@ class TXRouter:
                     k, v = part.split("=", 1)
                     pairs[k.strip()] = v.strip()
             command = dict(command)
+            # BaseTemp gehoert dazu: Eltako-Aktoren bekommen die Soll-
+            # TEMPERATUR, nicht deren Verschiebung. Kommt von aussen nur eine
+            # Verschiebung, braucht der Encoder den Basissollwert des Kanals,
+            # um daraus eine Temperatur zu machen.
             for src, dst in (("SetpointOffsetMin", "offset_min"),
-                             ("SetpointOffsetMax", "offset_max")):
+                             ("SetpointOffsetMax", "offset_max"),
+                             ("BaseTemp", "base")):
                 if dst not in command and src in pairs:
                     try:
                         command[dst] = float(pairs[src])

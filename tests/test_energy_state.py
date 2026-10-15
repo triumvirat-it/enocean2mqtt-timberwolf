@@ -1,7 +1,7 @@
 """
 Zaehlerstaende muessen einen Neustart ueberleben.
 
-Regression (Ekki, 02.09.2026): "enocean2mqtt hat den Zaehlerstand null
+Regression, Meldung aus dem Betrieb: "enocean2mqtt hat den Zaehlerstand null
 geschickt und ist dann auf den richtigen Zaehlerstand hochgegangen, dann
 stimmen die taeglich gerechneten Werte nicht mehr — da ist irgendwo der alte
 Zaehlerstand verloren gegangen."

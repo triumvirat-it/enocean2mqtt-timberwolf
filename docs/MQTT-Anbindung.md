@@ -220,6 +220,48 @@ Topic:   enocean/eg/bad/heizung/set
   ±10 K) — stehen normalerweise schon in der Kanal-Konfig und müssen nicht
   mitgeschickt werden.
 
+### 4d-2. Heizungsregelung (Wohnbereiche, Räume, Zeitzonen)
+
+Statt einzelne Sollwert-Befehle zu schicken, kann die Brücke selbst regeln:
+Ist-Werte aus beliebigen Topics, Sollwert nach Zeitplan, Ausgabe an die
+Heizkreise. Angelegt wird das im Reiter **Heizung**.
+
+```
+heizung/<zone>/state                    # Zustand des Wohnbereichs (raus)
+heizung/<zone>/set                      # {"sollwert_offset_k":0.5}, {"aktiv":false}
+heizung/<zone>/fenster/<name>/state     # Sollwert dieser Zeitzone (raus)
+heizung/<zone>/fenster/<name>/set       # {"sollwert_c":22.5} oder 22.5
+```
+
+Die Wurzel `heizung` steht **neben** dem Basis-Topic der Brücke, nicht
+darunter: Der Timberwolf führt jede Topic-Wurzel als eigenes MQTT-Gerät.
+Umstellbar im Reiter Heizung (`basis_topic`).
+
+Der Zustand enthält je Wohnbereich die Räume und je Raum die Heizkreise:
+
+```json
+{"zone":"bereich1","name":"Bürobereich","status":"ok","sollwert_c":23.5,
+ "sollwert_quelle":"fenster","fenster":"Bürostart",
+ "raeume":[{"raum":"buero_1","name":"Büro 1","ist_c":23.2,"status":"ok",
+            "kreise":[{"channel_id":"1.4","verschiebung_k":2.5,"sendbar":true}]}]}
+```
+
+`status` ist `ok`, `teilweise`, `inaktiv`, `kein_ziel`, `kein_fuehler`,
+`kein_sollwert`, `kein_istwert`, `istwert_alt` oder `istwert_unplausibel`.
+
+**Ohne brauchbaren Ist-Wert wird nichts gesendet** — ein ausgedachter Wert
+wäre für den Regler nicht von einer Messung zu unterscheiden. Der Wert darf
+als nackte Zahl (`21.4`) oder als JSON-Feld (`{"value":21.4}`, auch
+verschachtelt über `sensor.temp`) ankommen und muss innerhalb der
+Plausibilitätsgrenzen des Wohnbereichs liegen (Vorgabe 0…40 °C).
+
+Ein Topic kann mehrere Werte tragen: Der Thanos liefert auf demselben Topic
+`temperature_c` als Fühler und `setpoint_offset_c` als Sollwertrad. Der
+Wertspeicher ist deshalb nach *(Topic, Feld)* geschlüsselt.
+
+→ Vollständige Beschreibung inklusive Regelwerk, Fallstricke und
+Inbetriebnahme: **[Heizungsregelung.md](Heizungsregelung.md)**
+
 ### 4e. Wippentaster senden (F6-02, PTM emulieren)
 
 Die Bridge kann selbst einen Funktaster nachbilden (z. B. um einen fest

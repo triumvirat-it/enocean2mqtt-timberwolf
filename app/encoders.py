@@ -252,6 +252,71 @@ def encode_a5_10_setpoint(
     return _build_erp1_packet(RORG.BS4, payload, sender_id, status=0x00)
 
 
+A5_10_03_SOLL_MIN_C = 8.0
+A5_10_03_SOLL_MAX_C = 30.0
+
+
+def encode_a5_10_03_setpoint(
+    sender_id: int,
+    *,
+    temperature_c: float = 20.0,
+    setpoint_c: float = 21.0,
+    soll_min_c: float = A5_10_03_SOLL_MIN_C,
+    soll_max_c: float = A5_10_03_SOLL_MAX_C,
+) -> CommandFrame:
+    """
+    Raumtemperaturregler-Telegramm als **A5-10-03** — das Profil, auf das
+    Eltako-Heizungsaktoren angelernt werden (z. B. FHK61-230V, auch als
+    OPUS GN-A-U230V-HKR-1 im Handel). Die Bruecke spielt damit
+    den Funk-Temperaturregler.
+
+    Byte-Layout laut Eltako "Inhalte der Eltako-Funktelegramme", Eintrag
+    **FTR78S (EEP A5-10-03)**:
+
+        Data_byte3 = -
+        Data_byte2 = Solltemperatur 8..30 °C (0..255)
+        Data_byte1 = Isttemperatur 0..40 °C (255..0)
+        Data_byte0 = 0x0F
+
+    Zwei Dinge daran sind am echten Aktor ermittelt:
+
+    1. **DB2 ist eine absolute Solltemperatur, keine Verschiebung.** Die
+       Thermokon-Regler (SRC-DO8, A5-10-06) bekommen eine Sollwert-
+       VERSCHIEBUNG ueber ihren eingestellten Bereich — Eltako bekommt die
+       Temperatur selbst. Mit der Verschiebungs-Rechnung landete unser
+       ueblicher Wert 0x33 hier bei 12,4 °C, und der Kreis waere zu geblieben,
+       ohne dass irgendwo ein Fehler auftaucht.
+    2. **DB0 = 0x0F, nicht 0x08.** Die EEP-Spezifikation kennt nur bit3
+       (Daten/Lernen), der Rest gilt als unbelegt. Eltako setzt die unteren
+       Bits trotzdem, und Raumbedienteile tun es auch
+       (OPUS RTS55: 00 7A 70 0F). Mit 0x08 hat der Aktor nicht reagiert.
+
+    Wir bilden ein Raumbedienteil nach — also senden wir, was ein
+    Raumbedienteil sendet, und nicht, was in der Norm steht.
+    """
+    spanne = (soll_max_c - soll_min_c) or 1.0
+    db2 = max(0, min(255, round((setpoint_c - soll_min_c) / spanne * 255.0)))
+    db1 = max(0, min(255, round((40.0 - temperature_c) / 40.0 * 255.0)))
+    payload = bytes([0x00, db2, db1, 0x0F])
+    return _build_erp1_packet(RORG.BS4, payload, sender_id, status=0x00)
+
+
+def encode_4bs_raw(sender_id: int, payload: bytes) -> CommandFrame:
+    """
+    Vier Nutzbytes unveraendert als 4BS-Telegramm senden.
+
+    Fuer die Faelle, in denen der Hersteller die vier Bytes woertlich vorgibt
+    und eine Nachrechnung nur neue Fehler einbaut: Eltako listet in "Inhalte
+    der Eltako-Funktelegramme" die Lerntelegramme seiner Sensoren direkt auf
+    (FTR78S/A5-10-03: `40 18 2D 80`, FTR86B/A5-10-06: `40 30 0D 87`). Die
+    allgemeine Rechnung in encode_4bs_teach_in kommt beim FTR78S auf
+    `40 18 0D 80` — ein Byte daneben, und der Aktor lernt nicht.
+    """
+    if len(payload) != 4:
+        raise ValueError(f"4BS braucht genau 4 Nutzbytes, nicht {len(payload)}")
+    return _build_erp1_packet(RORG.BS4, bytes(payload), sender_id, status=0x00)
+
+
 def encode_4bs_teach_in(
     sender_id: int,
     rorg_func: int,

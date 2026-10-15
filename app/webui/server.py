@@ -43,6 +43,17 @@ from ..actor_state import ActorStateStore, estimate_position_now
 from ..cascade import Cascade
 from ..config import AppConfig
 from ..devices import Device, DeviceChannel, DeviceRegistry, ObserverBinding
+from ..heizausgang import (
+    ausgang_einrichten,
+    belegte_sender_ids,
+    heizausgaenge,
+    ist_heizungsaktor,
+)
+from ..heizung import (
+    Heizungseinstellungen,
+    doppelte_heizkreise,
+    doppelte_raum_ids,
+)
 from ..eep import get_profile_registry
 from ..gateway import GatewayManager, ReceivedTelegram
 from ..mqtt_client import floor_segment, name_segment, room_segment, slugify
@@ -567,6 +578,7 @@ class WebUIServer:
         state_store: ActorStateStore | None = None,
         observed_senders=None,
         publisher=None,
+        heizung=None,
     ) -> None:
         self.cfg = cfg
         self.manager = manager
@@ -581,6 +593,8 @@ class WebUIServer:
         # MQTT-Publisher fuer Live-Reconnect beim Aendern der MQTT-Config
         # (Einstellungsseite). None in Tests.
         self.publisher = publisher
+        # Heizungsregler (app/heizung.py). None in Tests.
+        self.heizung = heizung
         self.log_buffer = TelegramLog()
         self.teach = TeachInMode()
         self._uvicorn_task: asyncio.Task | None = None
@@ -1028,6 +1042,251 @@ def create_app(srv: WebUIServer) -> FastAPI:
         _save_fam14(srv.config_dir, items)
         log.info("FAM14-Liste gespeichert: %d Modul(e)", len(items))
         return {"items": items}
+
+    # -------- Heizungsregelung --------
+
+    def _heizung_oder_404():
+        if srv.heizung is None:
+            raise HTTPException(status_code=503,
+                                detail="Heizungsregelung nicht verfuegbar")
+        return srv.heizung
+
+    @app.get("/api/heizung")
+    async def get_heizung() -> dict:
+        """Zonen, Zeitplaene und die aktuelle Lage je Zone."""
+        h = _heizung_oder_404()
+        einst = h.speicher.einstellungen
+        lagen = await h.einmal_regeln()
+        jetzt = h.jetzt()
+        return {
+            "aktiv": einst.aktiv,
+            "takt_s": einst.takt_s,
+            "basis_topic": einst.basis_topic,
+            "zeitzone": einst.zeitzone,
+            # Die Uhr, nach der der Zeitplan wirklich laeuft. Gehoert in die
+            # Oberflaeche, weil ein Versatz sonst erst auffaellt, wenn es
+            # morgens kalt bleibt (24.09.2026).
+            "regleruhr": jetzt.strftime("%H:%M"),
+            "regleruhr_iso": jetzt.isoformat(),
+            "schalter": [s.model_dump(mode="json") for s in einst.schalter],
+            "zonen": [z.model_dump(mode="json") for z in einst.zonen],
+            "lage": [l.als_dict() for l in lagen],
+            "istwerte": [
+                {
+                    "topic": topic, "feld": feld,
+                    "wert": h.istwerte.hole(topic, feld)[0],
+                    "alter_s": round(time.time() - h.istwerte.hole(topic, feld)[1], 1),
+                }
+                for topic, feld in h.istwerte.topics()
+            ],
+        }
+
+    @app.put("/api/heizung")
+    async def put_heizung(payload: Heizungseinstellungen) -> dict:
+        """
+        Ersetzt die komplette Heizungs-Konfiguration.
+
+        Doppelte Zonen-IDs werden abgewiesen — sie wuerden sich sonst dasselbe
+        MQTT-Topic und denselben gespeicherten Sollwert teilen.
+
+        Ebenso ein Heizkreis, der in zwei Raeumen oder Bereichen steht:
+        ein Ausgang des Reglers hoert genau eine Sender-ID. Stuende er in zwei
+        Bereichen, funkten beide auf denselben Ausgang und ueberschrieben sich
+        im Sendetakt — der Sollwert kippte alle paar Minuten hin und her, ohne
+        dass irgendwo ein Fehler auftaucht.
+
+        Der STAND der Schalter kommt nicht aus diesem Aufruf: er gehoert zum
+        Betrieb, nicht zur Konfiguration. Sonst wuerfe ein Formular, das
+        jemand vor einer Stunde geoeffnet hat, den Gaeste-Schalter beim
+        Speichern wieder um.
+        """
+        h = _heizung_oder_404()
+        ids = [z.id for z in payload.zonen]
+        doppelt = {i for i in ids if ids.count(i) > 1}
+        if doppelt:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Zonen-ID mehrfach vergeben: {', '.join(sorted(doppelt))}",
+            )
+        leer = [z.id for z in payload.zonen if not z.id.strip()]
+        if leer:
+            raise HTTPException(status_code=400, detail="Jede Zone braucht eine ID")
+
+        schalter_ids = [s.id for s in payload.schalter]
+        doppelt_s = {i for i in schalter_ids if schalter_ids.count(i) > 1}
+        if doppelt_s:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Schalter-ID mehrfach vergeben: {', '.join(sorted(doppelt_s))}",
+            )
+        if any(not s.id.strip() for s in payload.schalter):
+            raise HTTPException(status_code=400,
+                                detail="Jeder Schalter braucht eine ID")
+
+        mehrfach = doppelte_heizkreise(payload.zonen)
+        if mehrfach:
+            raise HTTPException(status_code=400, detail=mehrfach[0])
+        doppelte_raeume = doppelte_raum_ids(payload.zonen)
+        if doppelte_raeume:
+            raise HTTPException(status_code=400, detail=doppelte_raeume[0])
+
+        # Schalterstand aus dem laufenden Betrieb uebernehmen (siehe Docstring).
+        stand = {s.id: s.an for s in h.speicher.einstellungen.schalter}
+        for s in payload.schalter:
+            if s.id in stand:
+                s.an = stand[s.id]
+
+        h.speicher.save(payload)
+        # Zustand entsorgter Zonen mitnehmen, sonst bleibt ein Sollwert einer
+        # geloeschten Zone ewig in heizung_state.yaml stehen.
+        for zone_id in list(h.zustand._sollwerte):  # noqa: SLF001
+            if zone_id not in ids:
+                h.zustand.vergiss(zone_id)
+        h.zustand.save()
+        await h.abos_erneuern()
+        lagen = await h.einmal_regeln()
+        log.info("Heizungs-Konfiguration gespeichert: %d Zone(n)", len(ids))
+        return {
+            "aktiv": payload.aktiv,
+            "takt_s": payload.takt_s,
+            "basis_topic": payload.basis_topic,
+            "zeitzone": payload.zeitzone,
+            "regleruhr": h.jetzt().strftime("%H:%M"),
+            "schalter": [s.model_dump(mode="json") for s in payload.schalter],
+            "zonen": [z.model_dump(mode="json") for z in payload.zonen],
+            "lage": [l.als_dict() for l in lagen],
+        }
+
+    @app.post("/api/heizung/schalter/{schalter_id}")
+    async def heizung_schalter(schalter_id: str, an: bool) -> dict:
+        """
+        Einen Betriebsart-Schalter umlegen (z.B. 'Gaeste').
+
+        Eigener Endpunkt statt eines Umwegs ueber die ganze Konfiguration:
+        Das Umlegen soll sofort wirken, ohne dass jemand erst ein Formular
+        speichert — und ohne dabei nebenbei halb getippte Aenderungen an
+        Zonen mit auszuliefern.
+        """
+        h = _heizung_oder_404()
+        treffer = next((s for s in h.speicher.einstellungen.schalter
+                        if s.id == schalter_id), None)
+        if treffer is None:
+            raise HTTPException(status_code=404,
+                                detail=f"Schalter '{schalter_id}' gibt es nicht")
+        treffer.an = bool(an)
+        h.speicher.save()
+        lagen = await h.einmal_regeln()
+        log.info("Heizung: Schalter '%s' auf %s", treffer.anzeigename(),
+                 "an" if treffer.an else "aus")
+        return {
+            "schalter": [s.model_dump(mode="json")
+                         for s in h.speicher.einstellungen.schalter],
+            "lage": [l.als_dict() for l in lagen],
+        }
+
+    @app.post("/api/heizung/regeln")
+    async def heizung_regeln() -> dict:
+        """Einen Durchlauf sofort ausloesen, ohne den Sendetakt anzufassen."""
+        h = _heizung_oder_404()
+        lagen = await h.einmal_regeln()
+        return {"lage": [l.als_dict() for l in lagen]}
+
+    @app.post("/api/heizung/senden")
+    async def heizung_senden(zone: str = "", raum: str = "") -> dict:
+        """
+        Senden erzwingen: Sendetakt zuruecksetzen und sofort funken.
+
+        Ohne Angabe fuer alles, mit `zone`/`raum` gezielt. Damit laesst sich
+        beim Einrichten pruefen, ob der Aktor reagiert, ohne bis zum naechsten
+        Takt zu warten.
+        """
+        h = _heizung_oder_404()
+        lagen = await h.jetzt_senden(zone_id=zone, raum_id=raum)
+        gesendet = [
+            f"{r.name}/{k.name}"
+            for l in lagen for r in l.raeume for k in r.kreise
+            if k.gesendet_vor_s is not None and k.gesendet_vor_s < 5
+        ]
+        return {"gesendet": gesendet, "lage": [l.als_dict() for l in lagen]}
+
+    @app.post("/api/heizung/test")
+    async def heizung_test(zone: str, raum: str, an: bool,
+                           dauer_min: float = 15.0) -> dict:
+        """
+        Aktortest eines Raums: volle Sollwertverschiebung, damit der Regler
+        den Kreis aufmacht und man im Verteiler sieht, ob sich der Stellmotor
+        bewegt.
+
+        Wirkt sofort und **ohne Speichern** — wie der Betriebsart-Schalter.
+        Der Test steht nur im Arbeitsspeicher und endet von selbst; ein
+        vergessener Test wuerde den Raum sonst auf Anschlag weiterheizen.
+        """
+        h = _heizung_oder_404()
+        zonen = h.speicher.einstellungen.zonen
+        z = next((x for x in zonen if x.id == zone), None)
+        if z is None:
+            raise HTTPException(404, f"Bereich '{zone}' gibt es nicht")
+        if not any((r.id or "") == raum for r in z.raeume):
+            raise HTTPException(404, f"Raum '{raum}' gibt es nicht")
+
+        lagen, warnung = await h.test_setzen(
+            zone, raum, bool(an), dauer_s=max(1.0, dauer_min) * 60.0)
+        return {"ok": True, "warnung": warnung,
+                "lage": [l.als_dict() for l in lagen]}
+
+    @app.get("/api/heizung/ziele")
+    async def heizung_ziele() -> dict:
+        """
+        Alle Kanaele, die als Heizkreis in Frage kommen — **jeder
+        Heizungsaktor**, nicht nur die fertig eingerichteten Sendekanaele.
+
+        Warum: Hat eine Anlage mehr Kreise als der 8-fach-Aktor Ausgaenge,
+        haengt der Rest z. B. an einem einzelnen OPUS GN-A-U230V-HKR-1. Der kam
+        aus dem MHC-Bestand als Empfangsgeraet herein und fehlte deshalb in
+        der Auswahl. Wer ihn dort nicht findet, sucht den Fehler bei sich.
+        Naeheres in app/heizausgang.py.
+        """
+        ziele = heizausgaenge(srv.devices.all(), srv.cfg.gateways)
+        return {"ziele": [z.als_dict() for z in ziele]}
+
+    @app.post("/api/heizung/ziele/einrichten")
+    async def heizung_ziel_einrichten(device_id: str, channel_id: str) -> dict:
+        """
+        Einen eingelesenen Heizungsaktor zum Sendekanal machen: die im Aktor
+        angelernte Adresse wird zur Sende-ID, der Kanal auf 'tx' gestellt und
+        das Gateway aus dem ID-Block bestimmt.
+
+        Eigener Knopf statt Handarbeit in der Geraeteliste, weil sonst niemand
+        darauf kommt, was dem Ausgang fehlt.
+        """
+        geraet = next((d for d in srv.devices.all()
+                       if d.device_id == device_id), None)
+        if geraet is None:
+            raise HTTPException(404, "Geraet nicht gefunden")
+        kanal = next((c for c in geraet.channels
+                      if c.channel_id == channel_id), None)
+        if kanal is None:
+            raise HTTPException(404, "Kanal nicht gefunden")
+        if not ist_heizungsaktor(kanal):
+            raise HTTPException(400, "Dieser Kanal ist kein Heizungsaktor")
+
+        try:
+            gateway = ausgang_einrichten(
+                geraet, kanal, srv.cfg.gateways,
+                belegte_sender_ids(srv.devices.all()),
+            )
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+        srv.devices.upsert(geraet)   # Indizes neu aufbauen (RX-ID ist weg)
+        srv.devices.save(srv.config_dir / "devices.yaml")
+        ziele = heizausgaenge(srv.devices.all(), srv.cfg.gateways)
+        return {
+            "ok": True,
+            "sender_id": kanal.active_sender_id,
+            "via_gateway": gateway,
+            "ziele": [z.als_dict() for z in ziele],
+        }
 
     # -------- Profiles --------
 
@@ -1504,16 +1763,24 @@ def create_app(srv: WebUIServer) -> FastAPI:
         """
         Sendet ein 4BS-Lerntelegramm an einen Aktor (M57 + M59).
 
-        Body (optional): {"sender_id": "FF810055"} — Sender-ID die angelernt
-        werden soll. MUSS in channel.senders existieren. Ohne Angabe: nutzt
-        den aktiven SenderBinding (channel.active_sender).
+        Body (optional):
+          {"sender_id": "FF810055"} — Sender-ID die angelernt werden soll.
+            MUSS in channel.senders existieren. Ohne Angabe: der aktive
+            SenderBinding (channel.active_sender).
+          {"payload": "40182D80"} — die vier Nutzbytes woertlich, wenn der
+            Hersteller sie vorgibt. Eltako listet die Lerntelegramme seiner
+            Sensoren auf; beim FTR78S (A5-10-03) weicht unsere Rechnung in
+            einem Byte ab, und der Aktor lernt dann nicht.
         """
         sender_id = None
+        teach_payload = None
         if payload and isinstance(payload, dict):
             sender_id = payload.get("sender_id") or None
+            teach_payload = payload.get("payload") or None
         try:
             return await srv.tx_router.send_teach_in(
                 device_id, channel_id, sender_id_hex=sender_id,
+                payload_hex=teach_payload,
             )
         except ValueError as exc:
             raise HTTPException(400, str(exc))

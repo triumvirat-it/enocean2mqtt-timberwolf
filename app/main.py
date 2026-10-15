@@ -18,6 +18,7 @@ from .devices import DeviceRegistry
 from .eep import register_default_profiles
 from .energy_state import EnergyStateStore
 from .gateway import GatewayManager
+from .heizung import HeizungsZustand, Heizungsregler, HeizzonenSpeicher
 from .mqtt_client import MQTTPublisher
 from .observed_senders import ObservedSenderRegistry
 from .pipeline import TelegramPipeline
@@ -93,7 +94,7 @@ async def amain() -> int:
     # Zaehlerstaende ueber Neustarts hinweg: Ohne diese Sicherung faengt der
     # Monotonie-Schutz nach jedem Deploy bei null an — der erste eintreffende
     # Wert wird dann zur Referenz, und die Visualisierung rechnet den Sprung
-    # darauf als Tagesverbrauch (Ekki, 02.09.2026).
+    # darauf als Tagesverbrauch.
     energy_state = EnergyStateStore(config_dir / "energy_state.yaml")
     energy_state.load()
     pipeline.energy_state = energy_state
@@ -152,11 +153,26 @@ async def amain() -> int:
     publisher.set_command_handler(tx_router.handle_command)
     pipeline.on_actor_feedback = tx_router.handle_feedback
 
+    # Heizungsregelung: Zonen mit Zeitplan. Der Ist-Wert kommt aus MQTT (auch
+    # 1-Wire-Fuehler, die nie ein EnOcean-Telegramm senden), der Sollwert geht
+    # als A5-10-06 an den Heizregler. Der zuletzt gueltige Sollwert liegt auf
+    # Platte, weil er ausserhalb der Zeitfenster weitergilt und sonst nach
+    # jedem Deploy weg waere.
+    heizzonen = HeizzonenSpeicher(config_dir / "heizzonen.yaml")
+    heizzonen.load()
+    heizung_zustand = HeizungsZustand(config_dir / "heizung_state.yaml")
+    heizung_zustand.load()
+    heizung = Heizungsregler(
+        heizzonen, heizung_zustand, tx_router=tx_router, publisher=publisher,
+    )
+    publisher.extra_handler = heizung.mqtt_nachricht
+
     webui = WebUIServer(
         cfg, manager, devices, cascade, tx_router, products, config_dir,
         state_store=state_store,
         observed_senders=observed_senders,
         publisher=publisher,
+        heizung=heizung,
     )
     # Pipeline-Hook: Telegramme an UI weiterreichen (Live-Log + Anlern-Modus)
     def _on_telegram(rx, match, decoded=None):
@@ -194,6 +210,8 @@ async def amain() -> int:
     await manager.start()
     await pipeline.start()
     await webui.start()
+    await heizung.abos_erneuern()
+    await heizung.start()
 
     log.info("Bereit — warte auf Telegramme")
 
@@ -216,6 +234,7 @@ async def amain() -> int:
             log.info("Zaehlerstaende gesichert: %d Eintraege.", len(energy_state))
         except Exception as exc:  # noqa: BLE001
             log.warning("energy_state.save beim Shutdown fehlgeschlagen: %s", exc)
+        await heizung.stop()
         await webui.stop()
         await pipeline.stop()
         await manager.stop()

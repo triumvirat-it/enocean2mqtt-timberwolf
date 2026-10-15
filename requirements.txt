@@ -10,3 +10,9 @@ PyYAML==6.0.2
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 python-multipart==0.0.12
+# tzdata: Die Zeitzonendatenbank als Python-Paket. Das schlanke Debian-Image
+# bringt /usr/share/zoneinfo nicht mit, und apt-get scheidet hier aus (zu wenig
+# RAM auf dem Timberwolf, siehe Dockerfile). Ohne das kennt zoneinfo
+# "Europe/Berlin" nicht und der Heizungs-Zeitplan laeuft auf UTC — im Sommer
+# zwei Stunden zu spaet (Vorfall 24.09.2026).
+tzdata==2024.2

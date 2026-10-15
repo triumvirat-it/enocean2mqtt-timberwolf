@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from app.encoders import (
     encode_4bs_teach_in,
+    encode_a5_10_03_setpoint,
     encode_a5_10_setpoint,
     encode_a5_38_08_dim,
     encode_a5_38_08_switch,
@@ -59,6 +60,94 @@ def test_a5_10_setpoint_range_clamps():
     high = decode_radio_erp1(_roundtrip(encode_a5_10_setpoint(
         0x1, setpoint_offset_c=20, offset_min_c=-10, offset_max_c=10)))
     assert high.payload[1] == 255
+
+
+def test_eltakos_lerntelegramm_wird_woertlich_gesendet():
+    """
+    Eltako gibt die Lerntelegramme seiner Sensoren byteweise vor
+    ("Inhalte der Eltako-Funktelegramme"): FTR78S (A5-10-03) = 40 18 2D 80.
+    Die allgemeine Rechnung aus EEP + Hersteller-ID kommt auf 40 18 0D 80 —
+    ein Byte daneben. Wo der Hersteller die Bytes nennt, gelten seine.
+    """
+    from app.encoders import encode_4bs_raw
+
+    gerechnet = decode_radio_erp1(_roundtrip(
+        encode_4bs_teach_in(0xFF800016, 0x10, 0x03, manufacturer_id=0x00D)))
+    assert bytes(gerechnet.payload).hex().upper() == "40180D80"
+
+    woertlich = decode_radio_erp1(_roundtrip(
+        encode_4bs_raw(0xFF800016, bytes.fromhex("40182D80"))))
+    assert bytes(woertlich.payload).hex().upper() == "40182D80"
+    assert woertlich.sender_id == 0xFF800016
+    assert woertlich.rorg == RORG.BS4
+
+
+def test_a5_10_03_sendet_wie_ein_echtes_raumbedienteil():
+    """
+    Der Stellventilaktor (OPUS GN-A-U230V-HKR-1) ist auf A5-10-03 angelernt.
+    Wir bilden das Raumbedienteil nach — also muss das Telegramm aussehen wie
+    das eines Raumbedienteils.
+
+    DB0 = 0x0F ist gemessen, nicht aus der Spezifikation: OPUS RTS55
+    senden 0x0F (z.B. 00 7A 70 0F). Mit dem spezifikations-
+    treuen 0x08 (nur das Daten-Bit) hat der Aktor nicht
+    reagiert; bit0 = 0 heisst in dieser Familie "Nacht/abwesend".
+    """
+    frame = encode_a5_10_03_setpoint(
+        0xFF800016, temperature_c=21.5, setpoint_c=19.0)
+    tel = decode_radio_erp1(_roundtrip(frame))
+    db3, db2, db1, db0 = tel.payload
+    assert tel.sender_id == 0xFF800016
+    assert db3 == 0x00           # nicht belegt
+    assert db0 == 0x0F           # wie die RTS55 im Haus
+    dec = decode_a5_10_room_panel(tel.payload, tel.status, tel.rorg)
+    assert abs(dec["temperature_c"] - 21.5) < 0.3
+
+
+def test_a5_10_03_sollwert_ist_absolut_8_bis_30_grad():
+    """
+    Eltako, "Inhalte der Eltako-Funktelegramme", FTR78S (A5-10-03):
+    `Data_byte2 = Solltemperatur 8..30 °C (0..255)`.
+
+    Das ist KEINE Verschiebung. Mit der Verschiebungs-Rechnung der Thermokon-
+    Regler landete unser ueblicher Wert 0x33 beim FHK61 bei 12,4 °C — der
+    Kreis waere zugeblieben, ohne dass irgendwo ein Fehler auftaucht.
+    """
+    def db2(soll):
+        return decode_radio_erp1(_roundtrip(
+            encode_a5_10_03_setpoint(0x1, setpoint_c=soll))).payload[1]
+
+    assert db2(8.0) == 0        # unterer Anschlag der Skala
+    assert db2(30.0) == 255     # oberer Anschlag
+    assert db2(19.0) == 128     # Mitte: (19-8)/22*255 = 127,5 -> 128
+    assert db2(21.0) == 151     # (21-8)/22*255 = 150,7
+    # Ausserhalb der Skala wird geklemmt, nicht umgebrochen.
+    assert db2(40.0) == 255
+    assert db2(0.0) == 0
+
+
+def test_a5_10_03_profil_kann_senden():
+    """
+    Ohne Encoder am Profil baut der TXRouter kein Telegramm und der Aktor
+    bleibt still — genau der Zustand vor dem 24.09.2026.
+    """
+    from app.eep import get_profile_registry
+
+    profil = get_profile_registry().get("A5-10-03")
+    assert profil is not None and profil.encoder is not None
+    frame = profil.encoder(0xFF800016, {"temperature": 20.0,
+                                        "setpoint": 19.0})
+    assert frame is not None
+    tel = decode_radio_erp1(_roundtrip(frame))
+    assert tel.payload[3] == 0x0F
+    assert tel.payload[1] == 128
+
+    # Kommt nur eine Verschiebung an, wird sie mit dem Basissollwert des
+    # Kanals in eine Temperatur umgerechnet (21 - 2 = 19 °C).
+    gemischt = profil.encoder(0xFF800016, {"temperature": 20.0,
+                                           "setpoint_offset": -2.0,
+                                           "base": 21.0})
+    assert decode_radio_erp1(_roundtrip(gemischt)).payload[1] == 128
 
 
 def _roundtrip(frame):

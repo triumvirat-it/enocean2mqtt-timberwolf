@@ -1,7 +1,7 @@
 """
 Letzte gueltige Zaehlerstaende — ueber Container-Neustarts hinweg.
 
-Warum es das gibt (Ekki, 02.09.2026): Der Monotonie-Schutz hielt den letzten
+Warum es das gibt: Der Monotonie-Schutz hielt den letzten
 Stand nur im Arbeitsspeicher. Bei jedem Neustart — also nach jedem Deploy — war
 er weg, und der erste eintreffende Wert wurde bedingungslos als neue Referenz
 uebernommen. Kam dabei ein 0-Wert oder ein Sub-Tarif-Stand zuerst, sprang der

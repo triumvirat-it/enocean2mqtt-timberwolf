@@ -16,7 +16,7 @@ import asyncio
 import json
 import logging
 import re
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Iterable
 
 import asyncio_mqtt as aiomqtt
 
@@ -27,6 +27,9 @@ log = logging.getLogger(__name__)
 
 CommandHandler = Callable[[str, str, dict], Awaitable[None]]
 # device_id, channel_id, command_dict
+
+ExtraHandler = Callable[[str, bytes], Awaitable[bool]]
+# topic, roher Payload -> True wenn die Nachricht verarbeitet wurde
 
 
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
@@ -91,6 +94,12 @@ class MQTTPublisher:
         # DeviceRegistry — noetig um eingehende .../set-Topics (Name-Slugs) auf
         # (device_id, channel_id) aufzuloesen. Von main.py gesetzt.
         self.devices = None
+        # Zusaetzliche Abos ausserhalb des eigenen Topic-Baums. Die
+        # Heizungsregelung holt sich darueber Raum-Istwerte, die gar nicht von
+        # EnOcean kommen (1-Wire & Co. liegen als fertige Werte im Broker).
+        # Konkrete Topics, keine Wildcards.
+        self._extra_topics: set[str] = set()
+        self.extra_handler: ExtraHandler | None = None
 
     @property
     def base(self) -> str:
@@ -147,6 +156,10 @@ class MQTTPublisher:
                     async with client.messages() as messages:
                         for pattern in self._set_subscriptions():
                             await client.subscribe(pattern, qos=self.cfg.qos)
+                        # Fremde Topics (Heizung: Raum-Istwerte, Sollwert-
+                        # Vorgaben) nach jedem Reconnect erneut abonnieren.
+                        for topic in sorted(self._extra_topics):
+                            await client.subscribe(topic, qos=self.cfg.qos)
                         async for msg in messages:
                             await self._handle_incoming(msg)
             except aiomqtt.MqttError as exc:
@@ -231,10 +244,53 @@ class MQTTPublisher:
                             return d.device_id, c.channel_id
         return None
 
+    async def subscribe_extra(self, topics: Iterable[str]) -> None:
+        """
+        Zusaetzliche, konkrete Topics abonnieren (keine Wildcards).
+
+        Wird von der Heizungsregelung genutzt: deren Raum-Istwerte liegen
+        irgendwo im Broker und nicht unter unserem eigenen Basis-Topic. Neue
+        Topics werden sofort abonniert, alle zusammen nach jedem Reconnect.
+        """
+        neu = {t.strip() for t in topics if t and t.strip()}
+        zusatz = neu - self._extra_topics
+        self._extra_topics |= neu
+        if not zusatz or not self._client:
+            return
+        for topic in sorted(zusatz):
+            try:
+                await self._client.subscribe(topic, qos=self.cfg.qos)
+                log.info("MQTT: zusaetzliches Abo '%s'", topic)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("MQTT: Abo '%s' fehlgeschlagen: %s", topic, exc)
+
+    async def publish_json(
+        self, topic: str, payload: dict[str, Any], retain: bool | None = None
+    ) -> None:
+        """Freies Publish auf ein beliebiges Topic (Heizungs-Zustand)."""
+        if not self._client:
+            return
+        await self._client.publish(
+            topic,
+            payload=json.dumps(payload, ensure_ascii=False),
+            qos=self.cfg.qos,
+            retain=self.cfg.retain_state if retain is None else retain,
+        )
+
     async def _handle_incoming(self, msg: aiomqtt.Message) -> None:
+        topic = msg.topic.value
+        # Fremde Abos zuerst: ein Heizungs-Sollwert endet ebenfalls auf /set,
+        # gehoert aber keinem Geraetekanal und wuerde sonst nur eine Warnung
+        # ausloesen.
+        if self.extra_handler is not None and topic in self._extra_topics:
+            try:
+                if await self.extra_handler(topic, msg.payload):
+                    return
+            except Exception as exc:  # noqa: BLE001
+                log.exception("MQTT: Zusatz-Handler für '%s': %s", topic, exc)
+                return
         if not self._cmd_handler:
             return
-        topic = msg.topic.value
         if not topic.endswith("/set"):
             return
         target = self._resolve_set_target(topic)

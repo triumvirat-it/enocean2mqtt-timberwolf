@@ -1305,6 +1305,28 @@ const TabDevices = {
                 toast("Konnte freie ID nicht holen: " + e.message, "error");
             }
         }
+        // Spiegelt find_gateway_for_sender() aus app/sender_routing.py:
+        // Eine Sender-ID gehoert zu dem Gateway, in dessen 128er-Block ab der
+        // Base-ID sie liegt. Wird beim Tippen mitgerechnet — vorher wurde
+        // gateway_match bei jeder Eingabe geleert und erst nach dem Speichern
+        // neu bestimmt, sodass waehrend der Eingabe immer die Warnung
+        // "liegt in keinem bekannten Gateway-Block" stand, auch wenn die ID
+        // voellig richtig war.
+        function gatewayFuerSender(senderId) {
+            const sid = parseInt(String(senderId || "").trim(), 16);
+            if (!isFinite(sid) || String(senderId).trim().length !== 8) return null;
+            for (const g of (editDialog.gateways || [])) {
+                if (!g.base_id) continue;
+                const base = parseInt(g.base_id, 16);
+                if (!isFinite(base)) continue;
+                // 0xFFFFFF80: alle Bits ausser den unteren 7
+                if (((base & 0xFFFFFF80) >>> 0) === ((sid & 0xFFFFFF80) >>> 0)) {
+                    return g.name;
+                }
+            }
+            return null;
+        }
+
         function removeSenderFromChannel(ch, idx) {
             if (!ch.senders) return;
             const wasActive = !!ch.senders[idx].active;
@@ -2072,7 +2094,7 @@ const TabDevices = {
             A5_12_EEP_OPTIONS, switchChannelEepInDialog, deleteChannelInDialog,
             sendTeachInForChannel,
             addSenderToChannel, removeSenderFromChannel, setActiveSender,
-            sendTeachInForSender, addSenderFromGateway,
+            sendTeachInForSender, addSenderFromGateway, gatewayFuerSender,
             channelIsReManActor, startReManPairing,
             addObserverToChannel, removeObserverFromChannel, onObserverInputKey,
             normalizeObserver, observerMatchLabel,
@@ -2523,7 +2545,7 @@ const TabDevices = {
         '          <div v-for="(s, sidx) in (ch.senders || [])" :key="sidx" style="padding: 0.3rem 0; border-bottom: 1px solid var(--border)">',
         '            <div style="display: grid; grid-template-columns: 2rem 8rem 1fr 9rem auto auto; gap: 0.3rem 0.4rem; align-items: center">',
         '              <input type="radio" :checked="s.active" @change="setActiveSender(ch, sidx)" :title="s.active ? \'Aktiv — wird für TX verwendet\' : \'Klicken um diesen Sender als aktiv zu setzen\'">',
-        '              <input class="input mono" v-model="s.sender_id" @input="s.gateway_match = null" placeholder="z.B. FF810055" style="text-transform: uppercase">',
+        '              <input class="input mono" v-model="s.sender_id" @input="s.gateway_match = gatewayFuerSender(s.sender_id)" placeholder="z.B. FF810055" style="text-transform: uppercase">',
         '              <select class="input" v-model="s.via_gateway">',
         '                <option value="">— Auto: {{ s.gateway_match || \'kein Match\' }} —</option>',
         '                <option v-for="g in (editDialog.gateways || [])" :key="g.name" :value="g.name">{{ g.name }}{{ g.enabled === false ? " (inaktiv)" : "" }} ({{ g.host }})<span v-if="g.base_id"> · {{ g.base_id }}</span></option>',
@@ -3396,7 +3418,7 @@ const TabCalculator = {
         // Rückwärts-Suche
         '<div class="card" style="margin-top:1rem">',
         '  <h3 style="margin-top:0">Rückwärts: aus Sender-ID zur Adresse</h3>',
-        '  <div style="font-size:0.78rem; color:var(--muted); margin-bottom:0.4rem">Eine empfangene Sender-ID hier eintragen — System sagt zu welchem FAM14 sie gehört und welche Geräteadresse + Offset dahinter steckt.</div>',
+        '  <div class="hinweistext">Eine empfangene Sender-ID hier eintragen — System sagt zu welchem FAM14 sie gehört und welche Geräteadresse + Offset dahinter steckt.</div>',
         '  <input class="input mono" v-model="reverseInput" placeholder="z.B. FF8000A3" style="text-transform:uppercase; max-width:14rem">',
         '  <div style="margin-top:0.8rem">',
         '    <template v-if="!reverseInput"><div style="color:var(--muted); font-style:italic">Sender-ID eintragen …</div></template>',
@@ -3412,6 +3434,882 @@ const TabCalculator = {
 };
 
 // ===== Einstellungen (MQTT + globale Defaults) =====
+// ===== Heizung =====
+// Heizzonen mit Zeitplan: Ist-Wert aus einem beliebigen MQTT-Topic, Sollwert
+// je Zeitfenster, Ausgabe als A5-10-06 an den Heizregler.
+
+const WOCHENTAGE = [
+    { id: "mo", label: "Mo" }, { id: "di", label: "Di" }, { id: "mi", label: "Mi" },
+    { id: "do", label: "Do" }, { id: "fr", label: "Fr" }, { id: "sa", label: "Sa" },
+    { id: "so", label: "So" },
+];
+
+const HEIZ_STATUS = {
+    ok:            { text: "regelt",             farbe: "#16a34a" },
+    inaktiv:       { text: "abgeschaltet",       farbe: "#94a3b8" },
+    teilweise:     { text: "teilweise",          farbe: "#f59e0b" },
+    kein_ziel:     { text: "kein Heizkreis",     farbe: "#f59e0b" },
+    kein_fuehler:  { text: "kein Raumfühler",    farbe: "#dc2626" },
+    kein_sollwert: { text: "kein Sollwert",      farbe: "#f59e0b" },
+    kein_istwert:  { text: "kein Ist-Wert",      farbe: "#dc2626" },
+    istwert_alt:   { text: "Ist-Wert veraltet",  farbe: "#dc2626" },
+    istwert_unplausibel: { text: "Ist-Wert unplausibel", farbe: "#dc2626" },
+};
+
+const TabHeizung = {
+    setup() {
+        const daten = ref({ aktiv: true, takt_s: 20, basis_topic: "heizung",
+                            zeitzone: "Europe/Berlin", regleruhr: "",
+                            schalter: [], zonen: [], lage: [], istwerte: [] });
+        const ziele = ref([]);
+        const offen = ref(null);        // Index des aufgeklappten Bereichs
+        // Mehrere Raeume duerfen gleichzeitig offen sein — der Anwender will
+        // drei nebeneinander vergleichen koennen (23.09.2026).
+        const raumOffen = ref({});      // "<zone.id>|<index>" -> true
+        const technikOffen = ref(null); // zone.id, dessen Aktor-Abgleich offen ist
+        const laedt = ref(false);
+        let timer = null;
+
+        // Die regelmaessige Auffrischung darf NUR die Live-Werte anfassen.
+        // Wuerde sie die Konfiguration mit ueberschreiben, waere ein gerade
+        // angelegter Bereich nach spaetestens 10 Sekunden wieder weg und
+        // jeder halb getippte Name mit ihm.
+        async function laden(nurLage) {
+            try {
+                const antwort = await api.get("/api/heizung");
+                daten.value.lage = antwort.lage || [];
+                daten.value.istwerte = antwort.istwerte || [];
+                // Nur den STAND der Schalter mitziehen, nicht die Liste: der
+                // Schalter kann von der Visu umgelegt worden sein, aber ein
+                // halb getippter Name darf dabei nicht verschwinden.
+                (antwort.schalter || []).forEach(s => {
+                    const da = (daten.value.schalter || []).find(x => x.id === s.id);
+                    if (da) da.an = s.an;
+                });
+                daten.value.regleruhr = antwort.regleruhr || "";
+                if (nurLage) return;
+                daten.value.zeitzone = antwort.zeitzone || "Europe/Berlin";
+                daten.value.aktiv = antwort.aktiv;
+                daten.value.takt_s = antwort.takt_s;
+                daten.value.basis_topic = antwort.basis_topic;
+                daten.value.schalter = antwort.schalter || [];
+                daten.value.zonen = antwort.zonen || [];
+            } catch (e) {
+                if (nurLage) return;     // beim Takt still bleiben
+                toast("Heizung laden fehlgeschlagen: " + e.message, "error");
+            }
+        }
+        async function zieleLaden() {
+            try { ziele.value = (await api.get("/api/heizung/ziele")).ziele || []; }
+            catch (e) { /* silent */ }
+        }
+
+        async function speichern() {
+            laedt.value = true;
+            try {
+                const antwort = await api.put("/api/heizung", {
+                    aktiv: daten.value.aktiv,
+                    takt_s: daten.value.takt_s,
+                    basis_topic: daten.value.basis_topic,
+                    zeitzone: daten.value.zeitzone,
+                    schalter: daten.value.schalter,
+                    zonen: daten.value.zonen,
+                });
+                daten.value.lage = antwort.lage || [];
+                daten.value.schalter = antwort.schalter || [];
+                // Die geprueften und vervollstaendigten Daten vom Server
+                // zurueckuebernehmen — so sieht man sofort, was wirklich
+                // gespeichert wurde.
+                daten.value.zonen = antwort.zonen || [];
+                toast("Gespeichert", "success");
+            } catch (e) {
+                toast("Speichern fehlgeschlagen: " + e.message, "error");
+            } finally {
+                laedt.value = false;
+            }
+        }
+
+        async function jetztSenden() {
+            try {
+                const antwort = await api.post("/api/heizung/senden");
+                daten.value.lage = antwort.lage || [];
+                const n = (antwort.gesendet || []).length;
+                toast(n ? ("Gesendet an " + n + " Heizkreis(e): "
+                           + antwort.gesendet.join(", "))
+                        : "Nichts gesendet — siehe Hinweise bei den Räumen",
+                      n ? "success" : "error");
+            } catch (e) {
+                toast("Fehlgeschlagen: " + e.message, "error");
+            }
+        }
+
+        function neueZone() {
+            const n = daten.value.zonen.length + 1;
+            daten.value.zonen.push({
+                id: "Bereich_" + n, name: "Bereich " + n, aktiv: true,
+                raeume: [], fuehler_regel: "mittelwert",
+                offset_grenze_k: 3.0,
+                kontakte: [], absenkung_zeitzone: "", absenkung_k: 3.0,
+                ist_max_alter_s: 1800, ist_min_c: 0.0, ist_max_c: 40.0,
+                basissollwert_c: 21.0, verschiebung_max_k: 5.0,
+                sollwert_offset_k: 0.0, sende_intervall_s: 300,
+                fenster: [],
+                // Zeitzonen nur fuer Zeiten MIT Heizbedarf; alles andere faellt
+                // hierauf zurueck.
+                restzeit: { aktiv: true, name: "Nachtabsenkung",
+                            sollwert_c: 18.0, sollwert_topic: "",
+                            sollwert_feld: "" },
+            });
+            offen.value = daten.value.zonen.length - 1;
+        }
+
+        // Aeltere Bereiche haben den Rueckfall-Sollwert noch nicht —
+        // das Formular darf daran nicht auflaufen.
+        function restzeit(zone) {
+            if (!zone.restzeit) {
+                zone.restzeit = { aktiv: false, name: "Nachtabsenkung",
+                                  sollwert_c: 18.0, sollwert_topic: "",
+                                  sollwert_feld: "" };
+            }
+            return zone.restzeit;
+        }
+
+        function neuerSchalter() {
+            const n = daten.value.schalter.length + 1;
+            daten.value.schalter.push({
+                id: "schalter_" + n, name: "Schalter " + n, an: false,
+            });
+        }
+        function schalterLoeschen(idx) {
+            const s = daten.value.schalter[idx];
+            if (!confirm("Schalter \"" + (s.name || s.id) + "\" entfernen? "
+                         + "Zeitzonen und Räume, die auf ihn zeigen, gelten "
+                         + "danach als NICHT freigegeben.")) return;
+            daten.value.schalter.splice(idx, 1);
+        }
+        // Umlegen geht sofort an den Server — nicht erst beim Speichern.
+        // Sonst legt man den Gäste-Schalter um und nichts passiert.
+        async function schalterUmlegen(s) {
+            const neu = !s.an;
+            try {
+                const antwort = await api.post(
+                    "/api/heizung/schalter/" + encodeURIComponent(s.id)
+                    + "?an=" + (neu ? "true" : "false"));
+                daten.value.schalter = antwort.schalter || [];
+                daten.value.lage = antwort.lage || [];
+                toast((s.name || s.id) + ": " + (neu ? "an" : "aus"), "success");
+            } catch (e) {
+                toast("Schalter nicht umgelegt: " + e.message
+                      + " — noch nicht gespeichert?", "error");
+            }
+        }
+        function zoneLoeschen(idx) {
+            const z = daten.value.zonen[idx];
+            if (!confirm("Bereich \"" + (z.name || z.id) + "\" wirklich entfernen?")) return;
+            daten.value.zonen.splice(idx, 1);
+            offen.value = null;
+        }
+        function neuesFenster(zone) {
+            zone.fenster.push({
+                name: "Fenster " + (zone.fenster.length + 1),
+                von: "06:00", bis: "09:00", tage: [], sollwert_c: 21.0,
+                sollwert_topic: "", sollwert_feld: "",
+            });
+        }
+        function fensterLoeschen(zone, idx) { zone.fenster.splice(idx, 1); }
+
+        function tagUmschalten(fenster, tag) {
+            const i = fenster.tage.indexOf(tag);
+            if (i >= 0) fenster.tage.splice(i, 1); else fenster.tage.push(tag);
+        }
+
+        function neuerFuehler(traeger) {
+            if (!traeger.fuehler) traeger.fuehler = [];
+            traeger.fuehler.push({ topic: "", feld: "", name: "", gewicht: 1.0 });
+        }
+        function fuehlerLoeschen(traeger, idx) { traeger.fuehler.splice(idx, 1); }
+
+        function neuerKontakt(traeger) {
+            if (!traeger.kontakte) traeger.kontakte = [];
+            traeger.kontakte.push({
+                topic: "", feld: "closed", name: "", bedeutung: "geschlossen",
+            });
+        }
+        // Spiegelt kontakt_ist_offen() aus app/heizung.py — nur für die Anzeige.
+        const TEXT_OFFEN = ["open", "opened", "offen", "geöffnet", "auf"];
+        const TEXT_ZU = ["closed", "close", "geschlossen", "zu", "shut"];
+        function kontaktOffen(k) {
+            const e = wert(k.topic, k.feld);
+            if (!e) return false;
+            const v = e.wert;
+            if (typeof v === "string") {
+                const t = v.trim().toLowerCase();
+                if (TEXT_OFFEN.indexOf(t) >= 0) return true;
+                if (TEXT_ZU.indexOf(t) >= 0) return false;
+            }
+            const wahr = (v === true || v === 1 || v === "1" || v === "true");
+            return k.bedeutung === "offen" ? wahr : !wahr;
+        }
+
+        // Das Sollwertrad haengt am Raum (0 oder 1).
+        function offsetSetzen(raum, feld, wert) {
+            if (!raum.offset_quelle) {
+                raum.offset_quelle = { topic: "", feld: "", name: "" };
+            }
+            raum.offset_quelle[feld] = wert;
+            // Ganz leer = kein Sollwertrad, damit nichts Halbes gespeichert wird
+            const q = raum.offset_quelle;
+            if (!q.topic && !q.feld && !q.name) raum.offset_quelle = null;
+        }
+
+        function neuerRaum(zone) {
+            const n = zone.raeume.length + 1;
+            zone.raeume.push({
+                id: "raum_" + n, name: "Raum " + n, aktiv: true,
+                fuehler: [], fuehler_regel: null,
+                offset_quelle: null, sollwert_offset_k: 0.0,
+                handverschiebung_k: 0.0,
+                kontakte: [], heizkreise: [],
+                dauerabsenkung: false, dauerabsenkung_ausnahme_schalter: "",
+            });
+        }
+        function neuerHeizkreis(raum) {
+            raum.heizkreise.push({
+                device_id: "", channel_id: "", name: "",
+                basissollwert_c: null, verschiebung_max_k: null,
+            });
+        }
+
+        // Raum entfernen. Bewusst mit Rückfrage und in der Kopfzeile des
+        // Kästchens: der Knopf stand bisher unten zwischen den Feldern und
+        // war nicht zu finden. Die Rückfrage sagt, was
+        // mitgeht — und was der Ausgang am Regler danach macht.
+        function raumLoeschen(zone, ridx) {
+            const raum = zone.raeume[ridx];
+            const teile = [];
+            if ((raum.fuehler || []).length) teile.push(raum.fuehler.length + " Fühler");
+            if ((raum.kontakte || []).length) teile.push(raum.kontakte.length + " Fensterkontakt(e)");
+            if ((raum.heizkreise || []).length) teile.push(raum.heizkreise.length + " Heizkreis(e)");
+            let text = "Raum \"" + (raum.name || raum.id || "Raum") + "\" entfernen?";
+            if (teile.length) text += "\n\nMit ihm verschwinden: " + teile.join(", ") + ".";
+            if ((raum.heizkreise || []).length) {
+                text += "\n\nDer Ausgang am Regler bekommt danach kein Telegramm "
+                    + "mehr und meldet nach 90 Minuten Sensorausfall — er bleibt "
+                    + "auf seiner letzten Stellgröße stehen, ist also nicht aus.";
+            }
+            if (!confirm(text)) return;
+            zone.raeume.splice(ridx, 1);
+            // Die Aufklapp-Zustände hängen am Index und stimmen danach nicht mehr.
+            raumOffen.value = {};
+            toast("Raum entfernt. Noch nicht gespeichert — \"Speichern\" nicht "
+                  + "vergessen.", "success");
+        }
+        function raumIstOffen(zone, ridx) {
+            return !!raumOffen.value[zone.id + "|" + ridx];
+        }
+        function raumUmschalten(zone, ridx) {
+            const s = zone.id + "|" + ridx;
+            if (raumOffen.value[s]) delete raumOffen.value[s];
+            else raumOffen.value[s] = true;
+        }
+        function alleRaeume(zone, auf) {
+            zone.raeume.forEach((_, i) => {
+                const s = zone.id + "|" + i;
+                if (auf) raumOffen.value[s] = true; else delete raumOffen.value[s];
+            });
+        }
+
+        // Raum in einen anderen Bereich verschieben.
+        //
+        // Der Heizkreis zieht mit um — und im Regler sind Basissollwert und
+        // Verschiebungsbereich JE KANAL eingestellt. Sie
+        // gehoeren also zum Ausgang, nicht zum Bereich, und aendern sich
+        // beim Umzug nicht. Die Vorgabe des Bereichs ist nur der Default
+        // fuer Kreise, die nichts Eigenes eingetragen haben — beim Umzug wird
+        // sie deshalb am Kreis festgeschrieben. Sonst uebernaehme der Raum
+        // stillschweigend die Werte des neuen Bereichs und die Verschiebung
+        // kaeme falsch skaliert am Regler an, ohne Fehlermeldung.
+        // Vue 3 wertet v-if VOR v-for aus — die Auswahl der Ziele gehoert
+        // deshalb hierher und nicht in die Vorlage.
+        function andereBereiche(zone) {
+            return daten.value.zonen.filter(z => z.id !== zone.id);
+        }
+
+        function raumVerschieben(zone, ridx, zielId) {
+            if (!zielId || zielId === zone.id) return;
+            const ziel = daten.value.zonen.find(z => z.id === zielId);
+            if (!ziel) return;
+            const raum = zone.raeume[ridx];
+
+            const kennung = raum.id || "";
+            if (kennung && ziel.raeume.some(r => r.id === kennung)) {
+                toast("Im Bereich \"" + (ziel.name || ziel.id) + "\" gibt es "
+                      + "die Raum-Kennung \"" + kennung + "\" schon — bitte erst "
+                      + "umbenennen.", "error");
+                return;
+            }
+
+            const kreise = raum.heizkreise || [];
+            const uebernimmt = kreise.filter(k =>
+                k.basissollwert_c === null || k.basissollwert_c === undefined
+                || k.verschiebung_max_k === null || k.verschiebung_max_k === undefined);
+            let text = "Raum \"" + (raum.name || raum.id) + "\" nach \""
+                + (ziel.name || ziel.id) + "\" verschieben?\n\n"
+                + "Er folgt dann dem Zeitplan und der Absenkung des neuen "
+                + "Bereichs. Fühler, Kontakte und Heizkreise ziehen mit.";
+            if (uebernimmt.length) {
+                text += "\n\nDie Aktor-Einstellungen sind im Regler je Kanal "
+                    + "eingestellt und ändern sich durch den Umzug nicht. "
+                    + uebernimmt.length + " Heizkreis(e) stehen auf \"wie "
+                    + "Bereich\" — dort werden " + zone.basissollwert_c
+                    + " °C / ±" + zone.verschiebung_max_k + " K fest eingetragen, "
+                    + "damit sie nicht stillschweigend die Werte des neuen "
+                    + "Bereichs übernehmen.";
+            }
+            if (!confirm(text)) return;
+
+            kreise.forEach(k => {
+                if (k.basissollwert_c === null || k.basissollwert_c === undefined) {
+                    k.basissollwert_c = zone.basissollwert_c;
+                }
+                if (k.verschiebung_max_k === null || k.verschiebung_max_k === undefined) {
+                    k.verschiebung_max_k = zone.verschiebung_max_k;
+                }
+            });
+
+            zone.raeume.splice(ridx, 1);
+            ziel.raeume.push(raum);
+            // Die Aufklapp-Zustaende haengen am Index — nach dem Umzug stimmen
+            // sie nicht mehr.
+            raumOffen.value = {};
+            toast("Verschoben. Noch nicht gespeichert — \"Speichern\" nicht "
+                  + "vergessen.", "success");
+        }
+
+        function raumLage(zone, raum) {
+            const l = lageNach.value[zone.id];
+            if (!l || !l.raeume) return null;
+            return l.raeume.find(r => r.raum === raum.id) || null;
+        }
+
+        // Was am Aktor unter "Eff. Sollwert" stehen MUSS, wenn Basis und
+        // Verschiebungsbereich mit dem Geraet uebereinstimmen. Weicht der
+        // angezeigte Wert ab, ist der Bereich im Aktor ein anderer als hier —
+        // genau der Fall am 23.09.2026: hier ±5 K, im Aktor ±8 K, dadurch kam
+        // aus +2,5 K am Geraet +4,0 K.
+        function erwartetesW(zone, t) {
+            const k = kreisLage(zone, t);
+            if (!k || k.gesendet_verschiebung_k === null
+                || k.gesendet_verschiebung_k === undefined) return "—";
+            return (k.basissollwert_c + k.gesendet_verschiebung_k).toFixed(1);
+        }
+
+        function statusFarbe(s) { return (HEIZ_STATUS[s] || {}).farbe || "#94a3b8"; }
+        function statusText(s) { return (HEIZ_STATUS[s] || {}).text || s; }
+
+        // Kurz halten — die Kachel ist schmal. "42 s" / "3 min" / "nie".
+        function gesendetText(zone, raum) {
+            const l = raumLage(zone, raum);
+            if (!l || !l.kreise || !l.kreise.length) return "nie";
+            const zeiten = l.kreise
+                .map(k => k.gesendet_vor_s)
+                .filter(v => v !== null && v !== undefined);
+            if (!zeiten.length) return "nie";
+            const s = Math.round(Math.min(...zeiten));
+            if (s < 90) return s + " s";
+            if (s < 5400) return Math.round(s / 60) + " min";
+            return Math.round(s / 3600) + " h";
+        }
+
+        // Aktortest: voller Sollwert, damit der Kreis aufmacht und man im
+        // Verteiler sieht, ob der Stellmotor läuft. Wirkt sofort und ohne
+        // Speichern — und endet von selbst, damit ein vergessener Test den
+        // Raum nicht auf Anschlag weiterheizt.
+        function testLaeuft(zone, raum) {
+            const l = raumLage(zone, raum);
+            return !!(l && l.test_aktiv);
+        }
+        function testRest(zone, raum) {
+            const l = raumLage(zone, raum);
+            if (!l || !l.test_rest_s) return "";
+            return Math.max(1, Math.round(l.test_rest_s / 60)) + " min";
+        }
+        async function testUmschalten(zone, raum) {
+            const an = !testLaeuft(zone, raum);
+            try {
+                const antwort = await api.post(
+                    "/api/heizung/test?zone=" + encodeURIComponent(zone.id)
+                    + "&raum=" + encodeURIComponent(raum.id)
+                    + "&an=" + (an ? "true" : "false"));
+                daten.value.lage = antwort.lage || [];
+                if (antwort.warnung) {
+                    toast(antwort.warnung, "error");
+                } else {
+                    toast(an ? ("Test läuft: " + (raum.name || raum.id)
+                                + " bekommt den vollen Sollwert — endet von "
+                                + "selbst nach 15 Minuten.")
+                             : "Test beendet, der Raum regelt wieder nach Plan.",
+                          "success");
+                }
+            } catch (e) {
+                toast("Test nicht umgestellt: " + e.message
+                      + " — Raum schon gespeichert?", "error");
+            }
+        }
+
+        async function sendenErzwingen(zone, raum) {
+            try {
+                const pfad = "/api/heizung/senden?zone=" + encodeURIComponent(zone.id)
+                    + (raum ? "&raum=" + encodeURIComponent(raum.id) : "");
+                const antwort = await api.post(pfad);
+                daten.value.lage = antwort.lage || [];
+                const n = (antwort.gesendet || []).length;
+                toast(n ? ("Gesendet an: " + antwort.gesendet.join(", "))
+                        : "Nichts gesendet — siehe Hinweis am Raum",
+                      n ? "success" : "error");
+            } catch (e) {
+                toast("Senden fehlgeschlagen: " + e.message, "error");
+            }
+        }
+        function zielSetzen(t, wert) {
+            const teile = (wert || "|").split("|");
+            t.device_id = teile[0];
+            t.channel_id = teile[1];
+        }
+        // Zu einem Heizkreis den Eintrag aus der Ausgangsliste finden. Die
+        // Liste enthält seit 24.09.2026 JEDEN Heizungsaktor — auch solche, die
+        // noch nicht senden können. Was einem fehlt, steht in `grund`.
+        function zielInfo(t) {
+            if (!t.device_id) return null;
+            return ziele.value.find(z => z.device_id === t.device_id
+                                      && z.channel_id === t.channel_id) || null;
+        }
+        function zielText(z) {
+            const name = z.device + " · " + z.channel;
+            if (z.bereit) return name;
+            return name + (z.einrichtbar ? " — noch einzurichten"
+                                         : " — sendet nicht");
+        }
+        async function zielEinrichten(t) {
+            const z = zielInfo(t);
+            if (!z) return;
+            if (!confirm("Ausgang \"" + z.device + " · " + z.channel + "\" als "
+                + "Heizausgang einrichten?\n\nDie im Aktor angelernte Adresse "
+                + "wird dabei zur Sende-ID der Brücke und der Kanal auf Senden "
+                + "gestellt. Das ändert die Geräteliste sofort — unabhängig "
+                + "vom Speichern hier.")) return;
+            try {
+                const antwort = await api.post(
+                    "/api/heizung/ziele/einrichten?device_id="
+                    + encodeURIComponent(t.device_id)
+                    + "&channel_id=" + encodeURIComponent(t.channel_id));
+                ziele.value = antwort.ziele || [];
+                toast("Eingerichtet: sendet als " + antwort.sender_id
+                      + " über " + antwort.via_gateway, "success");
+            } catch (e) {
+                toast("Nicht eingerichtet: " + e.message, "error");
+            }
+        }
+        function kreisLage(zone, t) {
+            const l = lageNach.value[zone.id];
+            if (!l || !l.raeume) return null;
+            for (const r of l.raeume) {
+                const k = (r.kreise || []).find(k =>
+                    k.device_id === t.device_id && k.channel_id === t.channel_id);
+                if (k) return k;
+            }
+            return null;
+        }
+
+        // Empfangene Werte nach "topic|feld" — die Liste kommt so vom Server,
+        // weil ein Topic mehrere Felder tragen kann.
+        const werteNach = computed(() => {
+            const m = {};
+            for (const e of (daten.value.istwerte || [])) {
+                m[e.topic + "|" + (e.feld || "")] = e;
+            }
+            return m;
+        });
+        function wert(topic, feld) {
+            if (!topic) return null;
+            return werteNach.value[topic + "|" + (feld || "")] || null;
+        }
+
+        const lageNach = computed(() => {
+            const m = {};
+            for (const l of (daten.value.lage || [])) m[l.zone] = l;
+            return m;
+        });
+
+        function statusInfo(zoneId) {
+            const l = lageNach.value[zoneId];
+            if (!l) return { text: "—", farbe: "#94a3b8" };
+            return HEIZ_STATUS[l.status] || { text: l.status, farbe: "#94a3b8" };
+        }
+
+        // Was der Aktor mit dieser Basis und diesem Bereich ueberhaupt kann.
+        // Geht die Uhr des Reglers gegen die des Browsers? Mehr als 5 Minuten
+        // Unterschied heisst: der Zeitplan laeuft versetzt — genau der Fall vom
+        // 24.09.2026, wo der Container auf UTC stand und die Tagsteuerung zwei
+        // Stunden zu spaet kam.
+        const uhrVersatz = computed(() => {
+            if (!daten.value.regleruhr) return 0;
+            const teile = daten.value.regleruhr.split(":");
+            if (teile.length !== 2) return 0;
+            const jetzt = new Date();
+            const regler = Number(teile[0]) * 60 + Number(teile[1]);
+            const hier = jetzt.getHours() * 60 + jetzt.getMinutes();
+            let d = regler - hier;
+            if (d > 720) d -= 1440;
+            if (d < -720) d += 1440;
+            return d;
+        });
+
+        function spanne(zone) {
+            const b = Number(zone.basissollwert_c) || 0;
+            const v = Number(zone.verschiebung_max_k) || 0;
+            return (b - v).toFixed(1) + "–" + (b + v).toFixed(1) + " °C";
+        }
+
+        onMounted(() => {
+            laden(); zieleLaden();
+            timer = setInterval(() => laden(true), 10000);
+        });
+        onUnmounted(() => clearInterval(timer));
+
+        return {
+            daten, ziele, offen, laedt, WOCHENTAGE,
+            laden, speichern, jetztSenden, neueZone, zoneLoeschen,
+            neuesFenster, fensterLoeschen, tagUmschalten, wert,
+            neuerFuehler, fuehlerLoeschen, neuerHeizkreis, zielSetzen, kreisLage,
+            zielInfo, zielText, zielEinrichten, raumLoeschen,
+            testLaeuft, testRest, testUmschalten,
+            offsetSetzen, neuerKontakt, kontaktOffen, neuerRaum, raumLage,
+            raumOffen, raumIstOffen, raumUmschalten, alleRaeume,
+            restzeit, neuerSchalter, schalterLoeschen, schalterUmlegen,
+            uhrVersatz, raumVerschieben, andereBereiche,
+            technikOffen, statusFarbe, statusText, gesendetText,
+            sendenErzwingen, erwartetesW,
+            lageNach, statusInfo, spanne,
+        };
+    },
+    template: [
+        '<div class="page-header">',
+        '  <div>',
+        '    <h1>🌡 Heizung</h1>',
+        '    <div class="subtitle">Bereiche mit Zeitzonen. Der Ist-Wert kommt aus MQTT (egal ob 1-Wire oder EnOcean), der Sollwert geht als Raumbedienteil-Telegramm an den Heizregler.</div>',
+        '  </div>',
+        '  <div style="display:flex; gap:0.5rem; align-items:center; white-space:nowrap">',
+        '    <button class="btn btn-ghost" @click="jetztSenden">Jetzt senden</button>',
+        '    <button class="btn btn-primary" @click="speichern" :disabled="laedt">Speichern</button>',
+        '  </div>',
+        '</div>',
+
+        // Kopfzeile: Hauptschalter
+        '<div class="card" style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap">',
+        '  <label style="display:flex; align-items:center; gap:0.5rem">',
+        '    <input type="checkbox" v-model="daten.aktiv">',
+        '    <b>Heizungsregelung aktiv</b>',
+        '  </label>',
+        '  <div style="font-size:0.8rem; color:var(--muted)">Takt <input class="input" type="number" v-model.number="daten.takt_s" min="5" max="300" style="width:5rem; display:inline-block"> s — wie oft nachgesehen wird, nicht wie oft gesendet wird.</div>',
+        '  <div style="font-size:0.8rem; color:var(--muted)" title="Der Timberwolf führt jede Topic-Wurzel als eigenes MQTT-Gerät.">Wurzel-Topic <input class="input mono" v-model="daten.basis_topic" style="width:8rem; display:inline-block"></div>',
+        '  <div style="font-size:0.8rem; color:var(--muted)" title="Zeitzone, in der die Uhrzeiten der Zeitzonen gelten. Sie steht hier und nicht am Container — sonst geht sie beim nächsten Neuaufbau verloren.">Zeitzone <input class="input mono" v-model="daten.zeitzone" style="width:9rem; display:inline-block"></div>',
+        '  <div v-if="daten.regleruhr" :style="{ fontSize:\'0.8rem\', color: Math.abs(uhrVersatz) > 5 ? \'#dc2626\' : \'var(--muted)\' }" :title="Math.abs(uhrVersatz) > 5 ? \'Die Uhr des Reglers weicht von deiner ab — der Zeitplan läuft versetzt!\' : \'Uhr, nach der der Zeitplan läuft\'">',
+        '    Regleruhr <b>{{ daten.regleruhr }}</b><span v-if="Math.abs(uhrVersatz) > 5"> ⚠ {{ uhrVersatz > 0 ? "+" : "" }}{{ uhrVersatz }} min gegenüber dir</span>',
+        '  </div>',
+        '  <span style="flex:1"></span>',
+        '  <button class="btn btn-ghost btn-sm" @click="neueZone">+ Bereich</button>',
+        '</div>',
+
+        // Betriebsart-Schalter (z. B. "Gäste")
+        '<div class="card" style="margin-top:1rem">',
+        '  <div style="display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap">',
+        '    <h4 style="margin:0">Schalter</h4>',
+        '    <span style="flex:1"></span>',
+        '    <button class="btn btn-ghost btn-sm" @click="neuerSchalter">+ Schalter</button>',
+        '  </div>',
+        '  <div class="hinweistext" title="Der Stand steht in heizzonen.yaml und liegt retained auf <Wurzel>/schalter/<Kennung>/state — die Visu kann ihn anzeigen und über /set auch umlegen.">Betriebsarten, die über alle Bereiche hinweg gelten. Zeitzonen können daran hängen („nur wenn Gäste"), Räume auch („dauerhaft abgesenkt, außer wenn"). Umlegen wirkt sofort, ohne Speichern.</div>',
+        '  <div v-if="!daten.schalter.length" class="hinweistext"><i>Noch kein Schalter angelegt.</i></div>',
+        '  <div v-for="(s, sidx) in daten.schalter" :key="sidx" class="zeile" style="align-items:center">',
+        '    <button class="btn btn-sm" :class="s.an ? \'btn-primary\' : \'btn-ghost\'" @click="schalterUmlegen(s)" style="width:5rem" :title="s.an ? \'ist an — klicken schaltet aus\' : \'ist aus — klicken schaltet ein\'">{{ s.an ? "● an" : "○ aus" }}</button>',
+        '    <input class="input" v-model="s.name" placeholder="Gäste" style="width:10rem">',
+        '    <input class="input mono" v-model="s.id" placeholder="gaeste" style="width:8rem" title="Kennung für MQTT und für die Verweise aus Zeitzonen und Räumen">',
+        '    <span class="lageklein mono">{{ daten.basis_topic }}/schalter/{{ s.id }}/set</span>',
+        '    <span style="flex:1"></span>',
+        '    <button class="btn btn-ghost btn-sm" @click="schalterLoeschen(sidx)">🗑</button>',
+        '  </div>',
+        '</div>',
+
+        '<div v-if="!daten.zonen.length" class="card" style="margin-top:1rem; color:var(--muted); font-style:italic">Noch kein Bereich angelegt.</div>',
+
+        // Zonen
+        '<div v-for="(zone, idx) in daten.zonen" :key="idx" class="card" style="margin-top:1rem">',
+        '  <div style="display:flex; align-items:center; gap:0.8rem; cursor:pointer" @click="offen = (offen === idx ? null : idx)">',
+        '    <span style="font-size:1.1rem">{{ offen === idx ? "▾" : "▸" }}</span>',
+        '    <b style="flex:0 0 12rem">{{ zone.name || zone.id }}</b>',
+        '    <span class="badge" :style="{ background: statusInfo(zone.id).farbe, color:\'#fff\', padding:\'0.1rem 0.5rem\', borderRadius:\'0.6rem\', fontSize:\'0.72rem\' }">{{ statusInfo(zone.id).text }}</span>',
+        '    <span v-if="lageNach[zone.id]" style="font-size:0.85rem; color:var(--muted)">',
+        '      Ist <b v-if="lageNach[zone.id].ist_c !== null">{{ lageNach[zone.id].ist_c }} °C</b><b v-else>—</b>',
+        '      · Soll <b v-if="lageNach[zone.id].sollwert_c !== null">{{ lageNach[zone.id].sollwert_c }} °C</b><b v-else>—</b>',
+        '      <span v-if="lageNach[zone.id].fenster"> ({{ lageNach[zone.id].fenster }})</span>',
+        '      <span v-else-if="lageNach[zone.id].sollwert_quelle === \'letzter_wert\'"> (letzter Wert)</span>',
+        '      <span v-if="lageNach[zone.id].verschiebung_k !== null"> · Verschiebung {{ lageNach[zone.id].verschiebung_k > 0 ? "+" : "" }}{{ lageNach[zone.id].verschiebung_k }} K</span>',
+        '    </span>',
+        '    <span style="flex:1"></span>',
+        '    <button class="btn btn-ghost btn-sm" @click.stop="zoneLoeschen(idx)" title="Zone entfernen">🗑</button>',
+        '  </div>',
+
+        '  <div v-if="lageNach[zone.id] && lageNach[zone.id].hinweis" style="margin-top:0.5rem; font-size:0.8rem; padding:0.4rem 0.6rem; border-radius:var(--radius-sm); background:rgba(245,158,11,0.12)">{{ lageNach[zone.id].hinweis }}</div>',
+
+        '  <div v-if="offen === idx" style="margin-top:1rem; border-top:1px solid var(--border); padding-top:1rem">',
+
+        // Stammdaten
+        '    <div style="display:flex; gap:1rem; flex-wrap:wrap">',
+        '      <div style="flex:0 0 12rem"><label style="font-size:0.78rem; color:var(--muted)">Name</label><input class="input" v-model="zone.name"></div>',
+        '      <div style="flex:0 0 10rem"><label style="font-size:0.78rem; color:var(--muted)">Kennung (MQTT)</label><input class="input mono" v-model="zone.id"></div>',
+        '      <div style="flex:0 0 8rem; display:flex; align-items:end; padding-bottom:0.4rem"><label style="display:flex; gap:0.4rem; align-items:center"><input type="checkbox" v-model="zone.aktiv"> aktiv</label></div>',
+        '    </div>',
+        // --- Zeitplan ---
+        '    <section class="abschnitt">',
+        // Zeitplan
+        '    <h4>Zeitzonen</h4>',
+        '    <div class="hinweistext" title="Die Visu schickt alle Sollwertsteller einer Gruppe als ein JSON auf ein Topic, z. B. heizung/bereich1 mit dem Feld TMPTagWohnen. Überlappen sich Zeitzonen, gewinnt die zuletzt gestartete.">Nur Zeiten <b>mit</b> Heizbedarf anlegen — alles andere fällt auf den Rückfall-Sollwert darunter. Sollwert fest hinterlegt oder aus einem Sollwertsteller der Visu (Topic + Feld). Keine Tage angehakt = täglich.</div>',
+        '    <table style="width:100%">',
+        '      <thead><tr><th style="text-align:left">Name</th><th>von</th><th>bis</th><th style="text-align:left">Tage</th><th>Sollwert</th><th style="text-align:left">Sollwertsteller (Topic / Feld)</th><th style="text-align:left">nur wenn</th><th></th></tr></thead>',
+        '      <tbody>',
+        '        <tr v-for="(f, fidx) in zone.fenster" :key="fidx">',
+        '          <td><input class="input" v-model="f.name" style="width:8rem"></td>',
+        '          <td><input class="input mono" v-model="f.von" placeholder="06:00" style="width:5.5rem"></td>',
+        '          <td><input class="input mono" v-model="f.bis" placeholder="09:00" style="width:5.5rem"></td>',
+        '          <td>',
+        '            <label v-for="t in WOCHENTAGE" :key="t.id" :style="{ display:\'inline-flex\', gap:\'0.2rem\', alignItems:\'center\', marginRight:\'0.4rem\', fontSize:\'0.75rem\', opacity: f.tage.length ? 1 : 0.5 }">',
+        '              <input type="checkbox" :checked="f.tage.includes(t.id)" @change="tagUmschalten(f, t.id)">{{ t.label }}',
+        '            </label>',
+        '          </td>',
+        '          <td style="white-space:nowrap"><input class="input" type="number" step="0.5" min="5" max="35" v-model.number="f.sollwert_c" style="width:5rem"> °C</td>',
+        '          <td>',
+        '            <div style="display:flex; gap:0.3rem">',
+        '              <input class="input mono" v-model="f.sollwert_topic" placeholder="heizung/zone1" style="width:10rem">',
+        '              <input class="input mono" v-model="f.sollwert_feld" placeholder="TMPTagWohnen" style="width:9rem">',
+        '            </div>',
+        '            <div v-if="wert(f.sollwert_topic, f.sollwert_feld)" style="font-size:0.7rem; color:var(--muted)">steht auf <b>{{ wert(f.sollwert_topic, f.sollwert_feld).wert }} °C</b></div>',
+        '            <div v-else-if="f.sollwert_topic" style="font-size:0.7rem; color:#f59e0b">noch nichts empfangen — es gilt {{ f.sollwert_c }} °C</div>',
+        '          </td>',
+        '          <td>',
+        '            <select class="input" :value="f.nur_wenn_schalter || \'\'" @change="f.nur_wenn_schalter = $event.target.value" style="width:8rem" title="Die Zeitzone gilt nur, solange dieser Schalter an ist. Zeigt sie auf einen gelöschten Schalter, gilt sie NICHT.">',
+        '              <option value="">immer</option>',
+        '              <option v-for="s in daten.schalter" :key="s.id" :value="s.id">{{ s.name || s.id }}</option>',
+        '            </select>',
+        '          </td>',
+        '          <td><button class="btn btn-ghost btn-sm" @click="fensterLoeschen(zone, fidx)">🗑</button></td>',
+        '        </tr>',
+        '      </tbody>',
+        '    </table>',
+        '    <button class="btn btn-ghost btn-sm" style="margin-top:0.5rem" @click="neuesFenster(zone)">+ Zeitzone</button>',
+
+        // Rueckfall-Sollwert fuer alle uebrigen Zeiten
+        '    <div class="untertitel">Alle übrigen Zeiten <span>— was gilt, wenn keine Zeitzone läuft</span></div>',
+        '    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap">',
+        '      <label style="display:flex; gap:0.3rem; align-items:center; font-size:0.78rem"><input type="checkbox" v-model="restzeit(zone).aktiv"> aktiv</label>',
+        '      <input class="input" v-model="restzeit(zone).name" placeholder="Nachtabsenkung" style="width:9rem">',
+        '      <span style="white-space:nowrap"><input class="input" type="number" step="0.5" min="5" max="35" v-model.number="restzeit(zone).sollwert_c" style="width:5rem"> °C</span>',
+        '      <input class="input mono" v-model="restzeit(zone).sollwert_topic" placeholder="heizung/buerobereich1" style="width:11rem">',
+        '      <input class="input mono" v-model="restzeit(zone).sollwert_feld" placeholder="BüroNacht" style="width:9rem">',
+        '      <span v-if="wert(restzeit(zone).sollwert_topic, restzeit(zone).sollwert_feld)" class="lageklein">steht auf <b>{{ wert(restzeit(zone).sollwert_topic, restzeit(zone).sollwert_feld).wert }} °C</b></span>',
+        '      <span v-else-if="restzeit(zone).sollwert_topic" class="lageklein" style="color:#f59e0b">noch nichts empfangen — es gilt {{ restzeit(zone).sollwert_c }} °C</span>',
+        '    </div>',
+        '    <div class="hinweistext">Ist das aus, bleibt außerhalb der Zeitzonen der <b>zuletzt gültige</b> Sollwert stehen. Dieser Wert ist zugleich das Ziel der Zwangsabsenkung — bei offenem Kontakt und bei dauerhaft abgesenkten Räumen.</div>',
+        '    </section>',
+        // --- Raeume ---
+        '    <section class="abschnitt">',
+        '    <h4>Räume</h4>',
+        '    <div class="hinweistext" title="Jeder Raum hat seine Fühler, höchstens ein Sollwertrad, eigene Fensterkontakte und beliebig viele Heizkreise.">Klick auf ein Kästchen öffnet es. Anzeige: Ist → Soll · Heizkreise · zuletzt gesendet.</div>',
+        '    <div v-if="!zone.raeume.length" class="hinweistext"><i>Noch kein Raum angelegt.</i></div>',
+
+        '    <div class="raeume">',
+        '      <div v-for="(raum, ridx) in zone.raeume" :key="ridx"',
+        '           :class="[\'raum\', { offen: raumIstOffen(zone, ridx) }]">',
+
+        // Kopfzeile — immer sichtbar
+        '        <div class="kopf" @click="raumUmschalten(zone, ridx)">',
+        '          <span>{{ raumIstOffen(zone, ridx) ? "▾" : "▸" }}</span>',
+        '          <b style="flex:1">{{ raum.name || raum.id || "Raum" }}</b>',
+        '          <span v-if="raumLage(zone, raum)" :style="{ background: statusFarbe(raumLage(zone, raum).status), color:\'#fff\', padding:\'0.02rem 0.35rem\', borderRadius:\'0.6rem\', fontSize:\'0.64rem\' }">{{ statusText(raumLage(zone, raum).status) }}</span>',
+        '          <button class="btn btn-ghost btn-sm" style="padding:0 0.35rem" @click.stop="raumLoeschen(zone, ridx)" title="Raum entfernen">🗑</button>',
+        '        </div>',
+        '        <div class="werte" @click="raumUmschalten(zone, ridx)" style="cursor:pointer">',
+        '          <span v-if="raumLage(zone, raum) && raumLage(zone, raum).ist_c !== null"><b>{{ raumLage(zone, raum).ist_c }}</b></span><span v-else>—</span>',
+        '          <span v-if="raumLage(zone, raum) && raumLage(zone, raum).sollwert_wirksam_c !== null" :title="\'Zeitplan \' + raumLage(zone, raum).sollwert_c + \' °C + feste Korrektur/Verschiebung — das ist der Wert, der am Aktor ankommt\'"> → <b>{{ raumLage(zone, raum).sollwert_wirksam_c }}</b> °C</span>',
+        '          <span v-else-if="raumLage(zone, raum) && raumLage(zone, raum).sollwert_c !== null"> → <b>{{ raumLage(zone, raum).sollwert_c }}</b> °C</span>',
+        '          <span v-if="raumLage(zone, raum) && raumLage(zone, raum).raumsteller_k" :title="raumLage(zone, raum).raumsteller_quelle === \'hand\' ? \'Verschiebung von Hand\' : \'Sollwertrad\'"> {{ raumLage(zone, raum).raumsteller_k > 0 ? "+" : "" }}{{ raumLage(zone, raum).raumsteller_k }}K<span style="color:var(--muted)">{{ raumLage(zone, raum).raumsteller_quelle === "hand" ? " (Hand)" : "" }}</span></span>',
+        '          <b v-if="testLaeuft(zone, raum)" style="color:#dc2626" title="Aktortest läuft — voller Sollwert"> 🔧 Test</b>',
+        '          <b v-if="raumLage(zone, raum) && raumLage(zone, raum).dauerabsenkung" style="color:#dc2626" title="Dauerhaft abgesenkt"> ⏻↓</b>',
+        '          <b v-else-if="raumLage(zone, raum) && raumLage(zone, raum).abgesenkt" style="color:#dc2626" title="Wegen offenem Kontakt abgesenkt"> ↓</b>',
+        '          <span :title="raum.heizkreise.length + \' Heizkreis(e), zuletzt gesendet\'"> · {{ raum.heizkreise.length }} HK · {{ gesendetText(zone, raum) }}</span>',
+        '        </div>',
+        '        <div v-if="raumLage(zone, raum) && raumLage(zone, raum).hinweis" class="hinweistext" style="margin:0.3rem 0 0">{{ raumLage(zone, raum).hinweis }}</div>',
+
+        // Inhalt — im selben Kaestchen
+        '        <div v-show="raumIstOffen(zone, ridx)">',
+
+        '          <div class="untertitel" style="border-top:none; padding-top:0.4rem">Raum</div>',
+        '          <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap">',
+        '            <input class="input" v-model="raum.name" placeholder="Wohnzimmer" style="width:9rem">',
+        '            <input class="input mono" v-model="raum.id" placeholder="wohnzimmer" style="width:8rem">',
+        '            <label style="display:flex; gap:0.3rem; align-items:center; font-size:0.74rem" title="Aus = der Raum funkt NICHT mehr. Der Aktor meldet nach 90 Minuten Sensorausfall und bleibt auf der letzten Stellgröße stehen. Zum Stilllegen besser „dauerhaft abgesenkt“."><input type="checkbox" v-model="raum.aktiv"> aktiv</label>',
+        '            <span style="flex:1"></span>',
+        '            <select v-if="daten.zonen.length > 1" class="input" style="width:11rem" :value="\'\'" @change="raumVerschieben(zone, ridx, $event.target.value); $event.target.value = \'\'" title="Raum mitsamt Fühlern, Kontakten und Heizkreisen in einen anderen Bereich verschieben">',
+        '              <option value="">verschieben nach …</option>',
+        '              <option v-for="z in andereBereiche(zone)" :key="z.id" :value="z.id">{{ z.name || z.id }}</option>',
+        '            </select>',
+        '            <button class="btn btn-ghost btn-sm" @click.stop="sendenErzwingen(zone, raum)" title="Sendetakt zurücksetzen und sofort funken">📡 senden</button>',
+        '            <button class="btn btn-ghost btn-sm" @click.stop="raumLoeschen(zone, ridx)" title="Raum entfernen">🗑 Raum entfernen</button>',
+        '          </div>',
+        // Aktortest — voller Sollwert auf Zeit, zum Zusehen im Verteiler
+        '          <div style="display:flex; gap:0.4rem; align-items:center; margin-top:0.3rem; flex-wrap:wrap">',
+        '            <label style="display:flex; gap:0.3rem; align-items:center; font-size:0.74rem; cursor:pointer" title="Schickt dem Aktor den größtmöglichen Sollwert, damit der Kreis aufmacht — zum Nachsehen im Verteiler, ob der Stellmotor läuft. Wirkt sofort, ohne Speichern, und endet nach 15 Minuten von selbst.">',
+        '              <input type="checkbox" :checked="testLaeuft(zone, raum)" @change.stop="testUmschalten(zone, raum)"> Aktor testen',
+        '            </label>',
+        '            <span v-if="testLaeuft(zone, raum)" class="lageklein" style="color:#dc2626"><b>Test läuft</b> — noch {{ testRest(zone, raum) }}, dann regelt der Raum wieder nach Plan.</span>',
+        '            <span v-else class="lageklein">Kreis öffnet auf vollen Sollwert, 15 Minuten lang.</span>',
+        '          </div>',
+
+        '          <div class="untertitel">Fühler <span>— mehrere werden verrechnet</span></div>',
+        '          <div v-for="(f, sidx) in raum.fuehler" :key="sidx" class="zeile">',
+        '            <input class="input" v-model="f.name" placeholder="Name" style="width:5.5rem">',
+        '            <input class="input mono" v-model="f.topic" placeholder="1wire/sensors/…" style="flex:1 1 11rem">',
+        '            <input class="input mono" v-model="f.feld" placeholder="Feld" style="width:5.5rem">',
+        '            <input class="input" type="number" step="0.5" min="0.5" v-model.number="f.gewicht" style="width:3.2rem" title="Gewicht im Mittelwert">',
+        '            <button class="btn btn-ghost btn-sm" @click="raum.fuehler.splice(sidx,1)">🗑</button>',
+        '            <div class="lageklein"><span v-if="wert(f.topic, f.feld)"><b>{{ wert(f.topic, f.feld).wert }}</b> vor {{ Math.round(wert(f.topic, f.feld).alter_s) }} s</span><span v-else style="color:#b45309">nichts empfangen</span></div>',
+        '          </div>',
+        '          <div style="display:flex; gap:0.4rem; align-items:center; margin-top:0.2rem; flex-wrap:wrap">',
+        '            <button class="btn btn-ghost btn-sm" @click="neuerFuehler(raum)">+ Fühler</button>',
+        '            <select class="input" :value="raum.fuehler_regel || \'\'" @change="raum.fuehler_regel = $event.target.value || null" style="width:11rem" title="Wie mehrere Fühler zu einem Wert werden"><option value="">wie Bereich</option><option value="mittelwert">Mittelwert</option><option value="kleinster">kältester</option><option value="groesster">wärmster</option></select>',
+        '            <span style="font-size:0.72rem; color:var(--muted)" title="Dauerhafte Eigenschaft des Raums: Fühler hängt zu kalt, oder der Raum soll grundsätzlich wärmer sein (Bad +2 K). Bleibt auch dann stehen, wenn später ein Sollwertrad dazukommt.">feste Korrektur</span>',
+        '            <input class="input" type="number" step="0.1" v-model.number="raum.sollwert_offset_k" style="width:4.2rem" title="Fühlerlage oder Nutzung — z. B. Bad +2 K"> <span style="font-size:0.72rem; color:var(--muted)">K</span>',
+        '          </div>',
+
+        // Sollwertverschiebung von Hand + Dauerabsenkung
+        '          <div style="display:flex; gap:0.4rem; align-items:center; margin-top:0.4rem; flex-wrap:wrap">',
+        '            <span style="font-size:0.72rem; color:var(--muted)" title="Das Sollwertrad in Software — für Räume ohne Rad an der Wand. Gleiche Grenze wie das Rad; sobald ein echtes Rad Werte liefert, gilt dessen Stellung statt dieser.">Verschiebung von Hand</span>',
+        '            <input class="input" type="number" step="0.5" :min="-zone.offset_grenze_k" :max="zone.offset_grenze_k" v-model.number="raum.handverschiebung_k" style="width:4.2rem"> <span style="font-size:0.72rem; color:var(--muted)">K (±{{ zone.offset_grenze_k }})</span>',
+        '            <span v-if="raumLage(zone, raum) && raumLage(zone, raum).raumsteller_quelle === \'rad\' && raum.handverschiebung_k" class="lageklein" style="color:#f59e0b">unwirksam — das Sollwertrad gilt</span>',
+        '            <span style="flex:1"></span>',
+        '            <label style="display:flex; gap:0.3rem; align-items:center; font-size:0.74rem" title="Der Raum fährt auf den Rückfall-Sollwert des Bereichs und funkt dabei weiter — für längere Nichtnutzung (z. B. Gästezimmer)."><input type="checkbox" v-model="raum.dauerabsenkung"> dauerhaft abgesenkt</label>',
+        '            <select v-if="raum.dauerabsenkung" class="input" :value="raum.dauerabsenkung_ausnahme_schalter || \'\'" @change="raum.dauerabsenkung_ausnahme_schalter = $event.target.value" style="width:11rem" title="Solange dieser Schalter an ist, gilt die Absenkung nicht.">',
+        '              <option value="">immer abgesenkt</option>',
+        '              <option v-for="s in daten.schalter" :key="s.id" :value="s.id">außer wenn {{ s.name || s.id }}</option>',
+        '            </select>',
+        '          </div>',
+
+        '          <div class="untertitel">Sollwertrad <span>— höchstens eins, z. B. der Thanos</span></div>',
+        '          <div class="zeile">',
+        '            <input class="input" :value="raum.offset_quelle ? raum.offset_quelle.name : \'\'" @input="offsetSetzen(raum, \'name\', $event.target.value)" placeholder="Name" style="width:5.5rem">',
+        '            <input class="input mono" :value="raum.offset_quelle ? raum.offset_quelle.topic : \'\'" @input="offsetSetzen(raum, \'topic\', $event.target.value)" placeholder="enocean/…/state" style="flex:1 1 11rem">',
+        '            <input class="input mono" :value="raum.offset_quelle ? raum.offset_quelle.feld : \'\'" @input="offsetSetzen(raum, \'feld\', $event.target.value)" placeholder="setpoint_offset_c" style="width:8rem">',
+        '            <div v-if="raum.offset_quelle && wert(raum.offset_quelle.topic, raum.offset_quelle.feld)" class="lageklein">steht auf <b>{{ wert(raum.offset_quelle.topic, raum.offset_quelle.feld).wert > 0 ? "+" : "" }}{{ wert(raum.offset_quelle.topic, raum.offset_quelle.feld).wert }} K</b></div>',
+        '          </div>',
+
+        '          <div class="untertitel">Fensterkontakte <span>— senken nur diesen Raum ab</span></div>',
+        '          <div v-for="(k, kidx) in raum.kontakte" :key="kidx" class="zeile">',
+        '            <input class="input" v-model="k.name" placeholder="Name" style="width:5.5rem">',
+        '            <input class="input mono" v-model="k.topic" placeholder="haus/…/fenster" style="flex:1 1 9rem">',
+        '            <input class="input mono" v-model="k.feld" placeholder="closed" style="width:5rem">',
+        '            <select class="input" v-model="k.bedeutung" style="width:6.5rem" title="Beschreibt das Feld den offenen oder den geschlossenen Zustand?"><option value="geschlossen">geschl.</option><option value="offen">offen</option></select>',
+        '            <span v-if="kontaktOffen(k)" style="color:#dc2626; font-size:0.72rem"><b>offen</b></span>',
+        '            <button class="btn btn-ghost btn-sm" @click="raum.kontakte.splice(kidx,1)">🗑</button>',
+        '          </div>',
+        '          <button class="btn btn-ghost btn-sm" @click="neuerKontakt(raum)">+ Fensterkontakt</button>',
+
+        '          <div class="untertitel">Heizkreise <span>— je ein Ausgang des Reglers</span></div>',
+        '          <div v-if="!ziele.length" class="hinweistext" style="color:#b45309">Kein Heizungsaktor gefunden — in der Geräteliste muss einer angelegt sein.</div>',
+        '          <div v-for="(t, tidx) in raum.heizkreise" :key="tidx" class="zeile" style="flex-wrap:wrap">',
+        '            <input class="input" v-model="t.name" placeholder="Name" style="width:5.5rem">',
+        '            <select class="input" style="flex:1 1 10rem" :value="t.device_id + \'|\' + t.channel_id" @change="zielSetzen(t, $event.target.value)" title="Alle Heizungsaktoren, die die Brücke kennt. Steht dahinter „noch einzurichten“, fehlt dem Kanal nur der Sendeweg.">',
+        '              <option value="|">— Ausgang wählen —</option>',
+        '              <option v-for="z in ziele" :key="z.device_id + z.channel_id" :value="z.device_id + \'|\' + z.channel_id">{{ zielText(z) }}</option>',
+        '            </select>',
+        '            <input class="input" type="number" step="0.1" v-model.number="t.basissollwert_c" placeholder="Basis" style="width:4rem" title="Basissollwert dieses Ausgangs — leer = wie Bereich">',
+        '            <input class="input" type="number" step="1" min="1" max="20" v-model.number="t.verschiebung_max_k" placeholder="±K" style="width:3.2rem" title="Verschiebungsbereich dieses Ausgangs — leer = wie Bereich">',
+        '            <button class="btn btn-ghost btn-sm" @click="raum.heizkreise.splice(tidx,1)" title="Heizkreis entfernen">🗑</button>',
+        '            <div class="lageklein" v-if="kreisLage(zone, t)">',
+        '              <span v-if="kreisLage(zone, t).sendbar">{{ kreisLage(zone, t).verschiebung_k > 0 ? "+" : "" }}{{ kreisLage(zone, t).verschiebung_k }} K · vor {{ Math.round(kreisLage(zone, t).gesendet_vor_s) }} s · <span :title="\'Am Gerät unter „Eff. Sollwert“ gegenprüfen — weicht W ab, stimmt der Verschiebungsbereich nicht mit dem Aktor überein.\'">W: <b>{{ erwartetesW(zone, t) }}</b></span></span>',
+        '              <span v-else style="color:#dc2626">{{ kreisLage(zone, t).hinweis || "regelt nicht" }}</span>',
+        '            </div>',
+        // Was dem gewählten Ausgang fehlt — und der Knopf, der es behebt.
+        '            <div v-if="zielInfo(t) && !zielInfo(t).bereit" style="flex:1 1 100%; display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap">',
+        '              <span class="lageklein" style="color:#b45309">{{ zielInfo(t).grund }}</span>',
+        '              <button v-if="zielInfo(t).einrichtbar" class="btn btn-sm btn-primary" @click="zielEinrichten(t)" title="Adresse des Aktors als Sende-ID übernehmen und den Kanal auf Senden stellen">Ausgang einrichten</button>',
+        '            </div>',
+        '            <div v-else-if="zielInfo(t) && zielInfo(t).spanne_k" class="lageklein" style="flex:1 1 100%" title="So steht es im Produktkatalog. Maßgeblich ist, was im Aktor eingestellt ist — dort gegenprüfen.">Katalog: Basis {{ zielInfo(t).basis_c }} °C · ±{{ zielInfo(t).spanne_k }} K</div>',
+        '          </div>',
+        '          <button class="btn btn-ghost btn-sm" @click="neuerHeizkreis(raum)">+ Heizkreis</button>',
+        '        </div>',
+        '      </div>',
+        '    </div>',
+        '    <div style="display:flex; gap:0.5rem; margin-top:0.4rem">',
+        '      <button class="btn btn-ghost btn-sm" @click="neuerRaum(zone)">+ Raum</button>',
+        '      <button class="btn btn-ghost btn-sm" v-if="zone.raeume.length > 1" @click="alleRaeume(zone, true)">alle öffnen</button>',
+        '      <button class="btn btn-ghost btn-sm" v-if="zone.raeume.length > 1" @click="alleRaeume(zone, false)">alle schließen</button>',
+        '    </div>',
+        '    </section>',
+        // --- Absenken bei offener Tuer ---
+        '    <section class="abschnitt">',
+        // Türkontakte des Bereichs
+        '    <h4>Absenken bei offener Tür</h4>',
+        '    <div class="hinweistext" title="„Bedeutung“ sagt, was das Feld beschreibt: ein EnOcean-Fensterkontakt meldet closed, also „geschlossen“. Meldet das Feld direkt Text wie open/closed, gilt der Text und die Einstellung ist gegenstandslos.">Solange einer dieser Kontakte offen ist, gilt für alle Räume der Absenk-Sollwert — unabhängig vom Zeitplan.</div>',
+        '    <table v-if="zone.kontakte.length" style="width:100%">',
+        '      <thead><tr><th style="text-align:left">Name</th><th style="text-align:left">MQTT-Topic</th><th style="text-align:left">Feld</th><th style="text-align:left">Bedeutung</th><th style="text-align:left">Zustand</th><th></th></tr></thead>',
+        '      <tbody>',
+        '        <tr v-for="(k, kidx) in zone.kontakte" :key="kidx">',
+        '          <td><input class="input" v-model="k.name" placeholder="Schiebetür" style="width:9rem"></td>',
+        '          <td><input class="input mono" v-model="k.topic" placeholder="enocean/raum_a/…/state" style="width:20rem"></td>',
+        '          <td><input class="input mono" v-model="k.feld" placeholder="closed" style="width:8rem"></td>',
+        '          <td><select class="input" v-model="k.bedeutung" style="width:9rem"><option value="geschlossen">geschlossen</option><option value="offen">offen</option></select></td>',
+        '          <td style="font-size:0.78rem; color:var(--muted)"><span v-if="kontaktOffen(k)" style="color:#dc2626"><b>offen</b></span><span v-else-if="wert(k.topic, k.feld)">zu</span><span v-else style="color:#f59e0b">nichts empfangen</span></td>',
+        '          <td><button class="btn btn-ghost btn-sm" @click="zone.kontakte.splice(kidx,1)">🗑</button></td>',
+        '        </tr>',
+        '      </tbody>',
+        '    </table>',
+        '    <div style="display:flex; gap:1rem; align-items:end; margin-top:0.4rem; flex-wrap:wrap">',
+        '      <button class="btn btn-ghost btn-sm" @click="neuerKontakt(zone)">+ Kontakt</button>',
+        '      <div><label style="font-size:0.78rem; color:var(--muted)">Absenken auf Zeitzone</label><select class="input" v-model="zone.absenkung_zeitzone" style="width:14rem"><option value="">{{ restzeit(zone).aktiv ? "— " + (restzeit(zone).name || "alle übrigen Zeiten") + " —" : "— feste Absenkung —" }}</option><option v-for="f in zone.fenster" :key="f.name" :value="f.name">{{ f.name }}</option></select></div>',
+        '      <div v-if="!zone.absenkung_zeitzone && !restzeit(zone).aktiv" style="flex:0 0 8rem"><label style="font-size:0.78rem; color:var(--muted)">Absenkung K</label><input class="input" type="number" step="0.5" min="0" v-model.number="zone.absenkung_k"></div>',
+        '    </div>',
+        '    </section>',
+        // --- Technik (zuklappbar) ---
+        '    <section class="abschnitt">',
+        '      <div style="cursor:pointer; display:flex; align-items:center; gap:0.5rem" @click="technikOffen = (technikOffen === zone.id ? null : zone.id)">',
+        '        <span>{{ technikOffen === zone.id ? "▾" : "▸" }}</span>',
+        '        <b style="font-size:0.9rem">Abgleich mit dem Heizregler</b>',
+        '        <span style="font-size:0.78rem; color:var(--muted)">Basis {{ zone.basissollwert_c }} °C · ±{{ zone.verschiebung_max_k }} K · Takt {{ zone.sende_intervall_s }} s · erreichbar {{ spanne(zone) }}</span>',
+        '      </div>',
+        '      <div v-show="technikOffen === zone.id" style="margin-top:0.7rem">',
+        // Aktor-Parameter
+        '    <h4>Abgleich mit dem Heizregler</h4>',
+        '    <div class="hinweistext" title="Das Telegramm überträgt nur einen Anteil des im Aktor eingestellten Bereichs, keinen Sollwert. Stimmt der Bereich nicht überein, regelt der Aktor auf etwas anderes, ohne dass ein Fehler auftaucht.">Basis und Bereich müssen <b>genau so</b> im Aktor stehen — sonst regelt er auf einen anderen Wert. Gegenprobe am Gerät: „Eff. Sollwert“ muss dem W je Heizkreis entsprechen.</div>',
+        '    <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:end">',
+        '      <div style="flex:0 0 9rem"><label style="font-size:0.78rem; color:var(--muted)">Basissollwert (°C)</label><input class="input" type="number" step="0.1" v-model.number="zone.basissollwert_c"></div>',
+        '      <div style="flex:0 0 9rem"><label style="font-size:0.78rem; color:var(--muted)">Verschiebung ± (K)</label><input class="input" type="number" step="1" min="1" max="20" v-model.number="zone.verschiebung_max_k"></div>',
+        '      <div style="flex:0 0 9rem"><label style="font-size:0.78rem; color:var(--muted)">Korrektur (K)</label><input class="input" type="number" step="0.1" v-model.number="zone.sollwert_offset_k"></div>',
+        '      <div style="flex:0 0 9rem"><label style="font-size:0.78rem; color:var(--muted)">Sendetakt (s)</label><input class="input" type="number" step="30" min="30" max="3600" v-model.number="zone.sende_intervall_s"></div>',
+        '      <div style="font-size:0.8rem; color:var(--muted); padding-bottom:0.5rem">erreichbar: <b>{{ spanne(zone) }}</b></div>',
+        '    </div>',
+        '    <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:end; margin-top:0.5rem">',
+        '      <div style="flex:0 0 9rem"><label style="font-size:0.78rem; color:var(--muted)">max. Alter Ist (s)</label><input class="input" type="number" v-model.number="zone.ist_max_alter_s" min="0"></div>',
+        '      <div style="flex:0 0 12rem"><label style="font-size:0.78rem; color:var(--muted)" title="Werte außerhalb gelten als Störung der Quelle und werden wie ein fehlender Wert behandelt.">plausibel von … bis (°C)</label><div style="display:flex; gap:0.3rem"><input class="input" type="number" step="1" v-model.number="zone.ist_min_c"><input class="input" type="number" step="1" v-model.number="zone.ist_max_c"></div></div>',
+        '      <div style="flex:0 0 9rem"><label style="font-size:0.78rem; color:var(--muted)">Sollwertrad ± K</label><input class="input" type="number" step="0.5" min="0" max="10" v-model.number="zone.offset_grenze_k"></div>',
+        '      <div><label style="font-size:0.78rem; color:var(--muted)">Fühler verrechnen (Vorgabe)</label><select class="input" v-model="zone.fuehler_regel" style="width:11rem"><option value="mittelwert">Mittelwert</option><option value="kleinster">kältester Fühler</option><option value="groesster">wärmster Fühler</option></select></div>',
+        '    </div>',
+        '    <div v-if="zone.sende_intervall_s > 3600" style="font-size:0.78rem; color:#dc2626">Achtung: Der Regler meldet nach 90 Minuten ohne Telegramm Sensorausfall.</div>',
+        '      </div>',
+        '    </section>',
+        '  </div>',
+        '</div>',
+    ].join("\n"),
+};
+
 const TabSettings = {
     setup() {
         const mqtt = reactive({
@@ -3546,6 +4444,7 @@ const AppRoot = {
         const tabs = [
             { id: "dashboard",  icon: "📊", label: "Dashboard" },
             { id: "devices",    icon: "🔌", label: "Geräte" },
+            { id: "heizung",    icon: "🌡", label: "Heizung" },
             { id: "gateways",   icon: "📡", label: "Gateways" },
             { id: "live",       icon: "📜", label: "Live-Log" },
             { id: "teach",      icon: "🎓", label: "Anlernen" },
@@ -3572,6 +4471,7 @@ const AppRoot = {
     components: {
         "tab-dashboard":  TabDashboard,
         "tab-devices":    TabDevices,
+        "tab-heizung":    TabHeizung,
         "tab-gateways":   TabGateways,
         "tab-live":       TabLive,
         "tab-teach":      TabTeach,

@@ -23,6 +23,13 @@ data/devices.yaml
 data/state.db
 data/*.log
 
+# Lokale Entwicklungs-Konfig (CONFIG_DIR=test-data) — enthaelt echte Topics
+# und Raumnamen des Hauses, gehoert nicht ins oeffentliche Repo
+test-data/heizzonen.yaml
+test-data/heizung_state.yaml
+test-data/energy_state.yaml
+test-data/*.log
+
 # Build-Artefakte
 build/
 dist/
@@ -40,6 +47,9 @@ deploy-backups/
 # Lokale Wissensbasis (get-knowledge) — kann haus-/geraetespezifische Daten
 # (echte EnOcean-IDs etc.) enthalten, gehoert nicht ins oeffentliche Repo
 ressources/
+
+# Werkzeuge fuers eigene Home Assistant (Haus-IP, Tresorpfad) — nur lokal
+tools/ha-statistik/
 
 # Lokales Arbeits-Logbuch — lokal fuehren, nicht ins oeffentliche Repo
 HISTORY.md

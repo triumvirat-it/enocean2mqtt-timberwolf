@@ -495,3 +495,111 @@ label {
     .nav-item { white-space: nowrap; }
     .content { padding: 1.25rem; }
 }
+
+/* ---------------------------------------------------------------------------
+   Heizung — dichte, ruhige Darstellung.
+
+   Warum: Die erste Fassung setzte weisse Kaesten auf den cremefarbenen
+   Hintergrund und gab jedem Raum einen grossen Block. Rueckmeldung vom
+   Anwender (23.09.2026): "Warum muessen die Raeume so riesige Flaechen haben,
+   die mir grell in die Augen leuchten, ich krieg Kopfschmerzen dabei." Darum
+   hier: kein reines Weiss, kleinere Eingabefelder, dichtere Tabellen — und
+   die Werte stecken IM Raumkaestchen statt in einem Block darunter.
+   --------------------------------------------------------------------------- */
+
+.abschnitt {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: rgba(240, 228, 214, 0.22);
+    padding: 0.7rem 0.85rem;
+    margin-top: 0.8rem;
+}
+.abschnitt > h4 {
+    margin: 0 0 0.25rem;
+    font-size: 0.86rem;
+    letter-spacing: 0.01em;
+}
+.hinweistext {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 0.45rem;
+    line-height: 1.35;
+}
+
+/* Raumkaestchen: geschlossen schmal nebeneinander, offen ueber die
+   ganze Breite — der Inhalt bleibt im selben Kaestchen. */
+.raeume {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.raum {
+    /* Feste, schmale Breite: mit flex-grow blaehten sich zwei Kaesten auf die
+       halbe Seite auf — der Anwender musste den Kopf bewegen wie beim Tennis
+       (23.09.2026). Geschlossen bleiben sie schmal, geoeffnet ganze Zeile. */
+    flex: 0 0 15.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.45);
+    padding: 0.45rem 0.6rem;
+}
+.raum.offen {
+    /* Auch geoeffnet nur rund ein Drittel breit — der Anwender will nicht
+       ueber die ganze Seite lesen muessen (23.09.2026). Dafuer sind die
+       Inhalte als umbrechende Zeilen gebaut, nicht als Tabellen. */
+    flex: 0 0 29rem;
+    max-width: 29rem;
+    border-color: var(--coral);
+    background: rgba(255, 255, 255, 0.62);
+}
+.raum > .kopf {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+}
+.raum .werte {
+    font-size: 0.74rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+}
+
+/* Alles im Raum kompakt */
+.abschnitt .input,
+.abschnitt .input {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.76rem;
+    min-height: 0;
+    height: auto;
+}
+.abschnitt table { font-size: 0.76rem; }
+.abschnitt th {
+    padding: 0.15rem 0.3rem;
+    font-size: 0.64rem;
+    letter-spacing: 0.04em;
+}
+.abschnitt td { padding: 0.12rem 0.3rem; }
+.abschnitt .btn-sm { padding: 0.15rem 0.45rem; font-size: 0.72rem; }
+
+/* Untergruppen im Raum: nur eine feine Linie, keine Flaeche */
+.untertitel {
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin: 0.55rem 0 0.2rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid var(--line);
+    color: var(--ink);
+}
+.untertitel span { font-weight: 400; color: var(--muted); }
+
+/* Zeilen im geoeffneten Raum: umbrechend statt Tabelle */
+.raum .zeile {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    align-items: center;
+    margin-bottom: 0.2rem;
+}
+.raum .zeile .input { min-width: 0; }
+.raum .weit { flex: 1 1 100%; }
+.raum .lageklein { font-size: 0.7rem; color: var(--muted); flex: 1 1 100%; margin: 0 0 0.25rem 0.1rem; }
