@@ -31,10 +31,14 @@ Gateway-Verwaltung, Anlern-Modus, Live-Telegramm-Log).
 
 | | |
 |---|---|
+| [CHANGELOG.md](CHANGELOG.md) | Was sich je Version geändert hat — vor dem Einspielen lesen |
+| [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) | Was (noch) nicht geht und worauf man achten muss |
+| [docs/Kompatibilitaet.md](docs/Kompatibilitaet.md) | Profile und Geräte: umgesetzt vs. mit echter Hardware erprobt |
 | [docs/Heizungsregelung.md](docs/Heizungsregelung.md) | Aufbau, Sollwert-Rechnung, Betriebsarten, Aktoren, Inbetriebnahme |
 | [docs/MQTT-Anbindung.md](docs/MQTT-Anbindung.md) | Topics, Befehle, Zustände (auch der Heizung) |
 | [docs/UI_SPEC.md](docs/UI_SPEC.md) | Aufbau der Web-UI |
 | [DEPLOY.md](DEPLOY.md) | Ausrollen auf dem Timberwolf über Portainer |
+| [docs/Veroeffentlichen.md](docs/Veroeffentlichen.md) | Für Maintainer: Positivliste, Prüfung, Release |
 
 ## Web-UI
 

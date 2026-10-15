@@ -48,6 +48,9 @@ deploy-backups/
 # (echte EnOcean-IDs etc.) enthalten, gehoert nicht ins oeffentliche Repo
 ressources/
 
+# Sperrliste fuer release.ps1 — echte IDs/Adressen der Anlage, nur lokal
+release-sperrliste.txt
+
 # Werkzeuge fuers eigene Home Assistant (Haus-IP, Tresorpfad) — nur lokal
 tools/ha-statistik/
 

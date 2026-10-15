@@ -1,0 +1,35 @@
+# Positivliste: Nur was hier steht, darf ins oeffentliche Repo und ins Release.
+#
+# Eine Zeile = ein Pfad. Endet er auf "/", ist der ganze Ordner gemeint.
+# "*" ist als Platzhalter erlaubt. Alles andere bricht release.ps1 ab --
+# auch eine neue Datei, die nur versehentlich committet wurde.
+# Die .gitignore ist KEIN Exportfilter; sie schuetzt nur vor "git add .".
+
+.dockerignore
+.gitignore
+CHANGELOG.md
+CREDITS.md
+DEPLOY.md
+KNOWN_LIMITATIONS.md
+LICENSE
+README.md
+docker-compose.yml
+release-liste.txt
+release.ps1
+requirements.txt
+run-test.py
+stack.yml
+
+app/
+docker/
+docs/
+tests/
+
+data/*.example.yaml
+
+# Testkonfiguration fuer "python run-test.py" -- nur Platzhalterdaten.
+# Kommt ins Repo, aber NICHT ins Release-Paket (siehe release.ps1).
+test-data/*.example.yaml
+test-data/actor_state.yaml
+test-data/devices.yaml
+test-data/gateways.yaml
