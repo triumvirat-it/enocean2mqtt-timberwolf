@@ -29,10 +29,10 @@ Stand: v0.9.173.
   Eichfahrt. Wird ein Rollladen von Hand oder von einem anderen Sender
   gefahren, kann die angezeigte Position abweichen, bis wieder eine Endlage
   angefahren wird.
-- **OPUS BRiDGE Jalousie (D2-05):** Die Bridge empfängt Position und
-  Lamellenwinkel. Für Fahrbefehle über die Bridge gibt es für D2-05 noch
-  keinen Encoder; angelernt und bedient werden die Aktoren über ihr eigenes
-  Anlernverfahren bzw. ihre Taster.
+- **OPUS BRiDGE UP-eSchalter Jal (D2-05):** Die Bridge empfängt Position und
+  Lamellenwinkel, kann diesen Aktoren aber noch keine Fahrbefehle schicken —
+  für D2-05 gibt es keinen Encoder. Rollläden und Jalousien über A5-3F-7F
+  (Eltako FSB, OPUS GreenNet GN-A-U230V-JRG) fahren dagegen über die Bridge.
 - **D2-01-Profile** außer dem generischen OPUS-BRiDGE-Aktor sind umgesetzt,
   aber nicht mit echter Hardware erprobt.
 - **Anlernen:** Die Bridge sendet 4BS-Lerntelegramme (mit EEP-Angabe) und die

@@ -45,7 +45,7 @@ hier oder stimmt die Spalte *Senden* nicht, schlägt der Test fehl.
 | `A5-13-01` | Wetterstation | ja | – | Empfang |
 | `A5-13-02` | Wetterstation (Sonne) | ja | – | – |
 | `A5-38-08` | Central Command (Schalten/Dimmen) | ja | ja | Empfang + Senden |
-| `A5-3F-7F` | Universal 4BS / Rollladen | ja | ja | Empfang |
+| `A5-3F-7F` | Universal 4BS / Rollladen | ja | ja | Empfang + Senden |
 | `ELTAKO-FSB` | Eltako Rollladen-Aktor | ja | ja | – |
 | `ELTAKO-FSR` | Eltako Schalt-Aktor | ja | ja | – |
 | `ELTAKO-FSR-FEEDBACK` | Eltako FSR, Rückmeldung | ja | – | – |
@@ -87,7 +87,7 @@ mehrere LAN-Gateways). Die Richtung ist die, in der sie dort genutzt werden.
 
 | Gerät | EEP | Richtung |
 |---|---|---|
-| FSB61NP | A5-3F-7F | Empfang |
+| FSB61NP (Rollladen) | A5-3F-7F | Empfang + Senden |
 | FLD61 | A5-38-08 | Empfang + Senden |
 | FSM61-UC, FT55, FSSA-230V | F6-02-01 | Empfang |
 | FWS61 (Wetterstation) | A5-13-01 | Empfang |
@@ -99,7 +99,7 @@ mehrere LAN-Gateways). Die Richtung ist die, in der sie dort genutzt werden.
 | BRiDGE UP-eSchalter 1 und 2 Kanal V2 | D2-01-XX, F6-02-01 | Empfang + Senden |
 | BRiDGE LED-Funk-Dimmer | D2-01-XX, F6-02-01 | Empfang + Senden |
 | BRiDGE UP-eSchalter Jal V2 | D2-05-02, F6-02-01 | Empfang (Fahrbefehle über die Bridge: siehe Einschränkungen) |
-| GN-A-U230V-JRG | A5-3F-7F | Empfang |
+| GN-A-U230V-JRG (Jalousie) | A5-3F-7F | Empfang + Senden |
 | GN-A-U230V-UD | A5-38-08 | Empfang |
 | GN-A-U230V-HKR-1 (Heizungsaktor, baugleich Eltako FHK61) | A5-10-03 | Senden |
 | RTS55 (Raumbedienteil) | A5-10-03 | Empfang |
