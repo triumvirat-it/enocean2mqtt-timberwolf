@@ -20,7 +20,21 @@ Gateway-Verwaltung, Anlern-Modus, Live-Telegramm-Log).
   OPUS/Eltako-Pairing.
 - **Rolladen-Positionstracking** — software-seitige Positionsberechnung mit getrennten
   Heben-/Senken-Laufzeiten (Eichfahrt), Befehlsschema `{"move"/"step"/"stop"}`.
+- **Heizungsregelung** — die Bridge spielt das Raumbedienteil für Fußbodenheizungs-Aktoren
+  (Thermokon SRC-DO8 über A5-10-06, Eltako FHK61 / OPUS GN-A-U230V-HKR-1 über A5-10-03):
+  Wohnbereiche mit Zeitzonen, Räume mit mehreren Fühlern, Sollwertrad, Tür-/Fensterkontakten,
+  Betriebsart-Schaltern, Dauerabsenkung und Aktortest. Details:
+  **[docs/Heizungsregelung.md](docs/Heizungsregelung.md)**.
 - **Web-UI** — FastAPI + Vue (kein Build-Step), Desktop- und Mobile-Ansicht.
+
+## Dokumentation
+
+| | |
+|---|---|
+| [docs/Heizungsregelung.md](docs/Heizungsregelung.md) | Aufbau, Sollwert-Rechnung, Betriebsarten, Aktoren, Inbetriebnahme |
+| [docs/MQTT-Anbindung.md](docs/MQTT-Anbindung.md) | Topics, Befehle, Zustände (auch der Heizung) |
+| [docs/UI_SPEC.md](docs/UI_SPEC.md) | Aufbau der Web-UI |
+| [DEPLOY.md](DEPLOY.md) | Ausrollen auf dem Timberwolf über Portainer |
 
 ## Web-UI
 

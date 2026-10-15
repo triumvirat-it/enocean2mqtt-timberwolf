@@ -49,10 +49,51 @@ Sollwert der aktiven Zeitzone
   = Verschiebung, begrenzt auf ±verschiebung_max_k
 ```
 
-Greift keine Zeitzone, gilt der zuletzt gültige Sollwert weiter. Ist ein
-Tür-/Fensterkontakt offen, gilt stattdessen der Absenk-Sollwert — bevorzugt
-der einer benannten Zeitzone, damit der Nachtsollwert die eine Quelle der
-Wahrheit bleibt.
+**Zeitzonen nur für Zeiten mit Heizbedarf anlegen.** Alles dazwischen —
+Nacht, Wochenende, Urlaub — fällt auf den **Rückfall-Sollwert** des
+Wohnbereichs (`restzeit`, fest oder aus der Visu wie eine Zeitzone). Ist er
+ausgeschaltet, bleibt der zuletzt gültige Sollwert stehen.
+
+Ist ein Tür-/Fensterkontakt offen oder steht ein Raum auf Dauerabsenkung,
+gilt der Absenk-Sollwert: bevorzugt der einer benannten Zeitzone
+(`absenkung_zeitzone`), sonst der Rückfall-Sollwert, zuletzt der laufende
+Sollwert minus `absenkung_k`.
+
+Die Uhrzeiten der Zeitzonen gelten in der **Zeitzone aus der Konfiguration**
+(`zeitzone`, Vorgabe `Europe/Berlin`), nicht in der des Containers — der läuft
+auf UTC, und der Plan läge im Sommer sonst zwei Stunden daneben.
+
+---
+
+## Betrieb: Korrekturen, Schalter, Absenkung
+
+| | Wirkung |
+|---|---|
+| **Feste Korrektur** (`sollwert_offset_k` am Raum) | Dauerhafte Eigenschaft des Raums, z. B. Fühler hängt zu kalt oder Bad +2 K. Bleibt auch neben einem Sollwertrad stehen, nicht auf `offset_grenze_k` begrenzt. |
+| **Verschiebung von Hand** (`handverschiebung_k`) | Das Sollwertrad in Software für Räume ohne Rad an der Wand. Gleiche Grenze wie das Rad; ein echtes Rad **ersetzt** sie, sobald es einen Wert liefert (nicht addiert). |
+| **Dauerabsenkung** (`dauerabsenkung`) | Raum dauerhaft auf Absenk-Sollwert, z. B. selten genutzte Räume. Er funkt **weiter** — anders als `aktiv=false`, wo der Aktor nach 90 Minuten mit seiner Ersatz-Stellgröße einfriert. Optional aufgehoben durch einen Schalter (`dauerabsenkung_ausnahme_schalter`). |
+| **Betriebsart-Schalter** (`schalter`) | Benannter Umstand, den der Mensch setzt, z. B. „Gäste da“. Zeitzonen können daran hängen (`nur_wenn_schalter`), Dauerabsenkungen können durch ihn aufgehoben werden. Umlegen im Reiter Heizung oder über MQTT; der Stand überlebt den Neustart. Zeigt eine Zeitzone auf einen gelöschten Schalter, gilt sie **nicht**. |
+| **Aktortest** | Je Raum: volle Verschiebung, damit der Kreis aufmacht und man im Verteiler sieht, ob der Stellmotor läuft. Wirkt sofort, ohne Speichern, endet nach 15 Minuten von selbst. |
+
+Räume lassen sich zwischen Wohnbereichen verschieben. Basissollwert und
+Verschiebungsbereich ziehen dabei mit, weil sie zum Ausgang gehören, nicht
+zum Bereich.
+
+---
+
+## Aktoren
+
+Jeder Heizkreis ist ein Sendekanal der Bridge. Zwei Familien:
+
+| Aktor | EEP | Was gesendet wird |
+|---|---|---|
+| Thermokon SRC-DO8 / STC-DO8 | A5-10-06 | Ist-Temperatur + **Verschiebung** über den im Aktor eingestellten Bereich |
+| Eltako FHK61-230V (auch als OPUS GN-A-U230V-HKR-1) | A5-10-03 | Ist-Temperatur + **absolute** Solltemperatur 8…30 °C, DB0 = `0x0F` wie echte Raumbedienteile |
+
+In der Auswahl der Heizkreise erscheint **jeder Heizungsaktor**, auch einer,
+der nur als Empfangsgerät eingelesen wurde. Was ihm zum Senden fehlt, steht
+daneben; „Einrichten“ macht die im Aktor angelernte Adresse zur Sende-ID und
+bestimmt das Gateway aus dem ID-Block.
 
 ---
 
@@ -100,6 +141,8 @@ heizung/<zone>/state                    # Zustand (raus, retained)
 heizung/<zone>/set                      # {"sollwert_offset_k":0.5}, {"aktiv":false}
 heizung/<zone>/fenster/<name>/state     # Sollwert dieser Zeitzone (raus)
 heizung/<zone>/fenster/<name>/set       # {"sollwert_c":22.5} oder 22.5
+heizung/schalter/<id>/state             # Stand eines Betriebsart-Schalters (raus, retained)
+heizung/schalter/<id>/set               # Schalter umlegen
 ```
 
 Ein Sollwertsteller der Visu kommt als **ein** JSON mit mehreren Feldern auf
@@ -121,20 +164,23 @@ und Fühlerwerte direkt nach einem Neustart da statt erst beim nächsten Zyklus.
 | `PUT /api/heizung` | Konfiguration ersetzen (weist doppelte Zonen-IDs ab) |
 | `POST /api/heizung/regeln` | Durchlauf ohne den Sendetakt anzufassen |
 | `POST /api/heizung/senden?zone=&raum=` | Sendetakt zurücksetzen und sofort funken |
-| `GET /api/heizung/ziele` | verfügbare A5-10-TX-Kanäle für die Auswahl |
+| `POST /api/heizung/schalter/{id}?an=` | Betriebsart-Schalter umlegen (ohne Speichern der Konfiguration) |
+| `POST /api/heizung/test?zone=&raum=&an=&dauer_min=` | Aktortest an/aus (Vorgabe 15 Minuten) |
+| `GET /api/heizung/ziele` | jeder Heizungsaktor, mit dem, was ihm zum Senden fehlt |
+| `POST /api/heizung/ziele/einrichten?device_id=&channel_id=` | eingelesenen Aktor zum Sendekanal machen |
 
 ---
 
 ## Inbetriebnahme
 
-1. Heizregler als Gerät mit A5-10-06-Kanälen (Richtung `tx`) anlegen und je
-   Kanal die im Aktor gelernte Sender-ID eintragen.
+1. Heizregler als Gerät mit A5-10-06- bzw. A5-10-03-Kanälen (Richtung `tx`)
+   anlegen und je Kanal die im Aktor gelernte Sender-ID eintragen — oder einen
+   eingelesenen Aktor in der Heizkreis-Auswahl über „Einrichten“ übernehmen.
 2. Am Gerät ablesen und im Portal eintragen: **Basissollwert** und
    **Sollwertverschiebung** je Ausgang. Prüfen, dass der **Raumfühlertyp**
    nicht `SR0x` ist — dann setzt der Regler die Verschiebung fest auf 0 K.
 3. Wohnbereich, Zeitzonen, Räume, Fühler und Heizkreise anlegen, speichern.
 4. „Jetzt senden" drücken und am Gerät unter *Eff. Sollwert* gegenprüfen:
    `W:` muss dem Wert in der Heizkreis-Zeile entsprechen.
-
-Gerätewissen (Menüpunkte, Werkseinstellungen, Ausgang↔Sender-ID der Anlage)
-steht in `ressources/knowledge/thermokon-src-do8-2025-heizregler-parameter.md`.
+5. Je Raum den **Aktortest** fahren und im Verteiler nachsehen, ob der
+   richtige Stellmotor aufmacht.
